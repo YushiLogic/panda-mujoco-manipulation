@@ -22,6 +22,7 @@ This portfolio project covers joint-space control, end-effector control, inverse
 - MuJoCo 3.12
 - NumPy 2.2
 - SciPy 1.15
+- Conda env: `mujoco` (`C:\Users\29391\.conda\envs\mujoco\python.exe`)
 - Windows development environment
 
 ## Installation
