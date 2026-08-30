@@ -1,0 +1,7 @@
+# 统一换行符：所有文本文件在仓库和工作区一律 LF，杜绝 CRLF 转换警告
+* text=auto eol=lf
+
+# 二进制文件不做任何换行处理
+*.png binary
+*.stl binary
+*.obj binary
