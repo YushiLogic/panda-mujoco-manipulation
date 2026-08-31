@@ -16,6 +16,12 @@ import matplotlib.pyplot as plt
 from panda_mujoco.simulation import PandaScene, PANDA_HOME_QPOS
 from panda_mujoco.joint_trajectory import JointPath
 
+HOME=PANDA_HOME_QPOS[:7] #home 关节角（7维）
+def turn(a):
+    """返回'底座左转 a 弧度'的关节角：复制 HOME，只改 joint1。"""
+    p = HOME.copy()      # 必须用 copy()！否则改 p 会把 HOME 一起改掉（又是视图/副本那一课）
+    p[0] = a             # joint1 是绕竖直轴的底座旋转
+    return p
 def main():
     """演示 MoveJ（关节空间移动）规划器的使用。
 
@@ -26,12 +32,15 @@ def main():
     MOVE_TICKS   = 150   # 每段运动持续的控制拍（150拍 ≈ 3秒）
     SETTLE_TICKS = 150   # 全部走完后保持的控制拍数
 
-    HOME=PANDA_HOME_QPOS[:7] #home 关节角（7维）
+    # HOME=PANDA_HOME_QPOS[:7] #home 关节角（7维）
     LEFT=[0.6,0.0,0.0,-1.57079,0.0,3.0,-1.7853] #底座左转
     RIGHT=[-0.6,0.0,0.0,-1.57079,0.0,3.0,-1.7853] #底座右转
-
+    
     scene = PandaScene() #构造时已自动 reset 到 home
-    plan=JointPath([HOME,LEFT,RIGHT,HOME],ticks_per_move=MOVE_TICKS) #规划器：home→左→右→home
+    plan=JointPath([HOME,
+     turn(0.3), turn(0.6), turn(0.3), HOME,      # 右扇区扫过去再回来（+为逆时针方向）
+     turn(-0.3), turn(-0.6), turn(-0.3), HOME],  # 左扇区扫过去再回来
+     ticks_per_move=MOVE_TICKS) #规划器：home→左→右→home
     err_log=[] #误差曲线：每个控制拍的末端位置误差
     last_seg,settle,done,step=0,0,False,0
 
@@ -45,8 +54,8 @@ def main():
                 if plan.seg !=last_seg: #段切换时重置 settle 计数器
                     goal=plan.goals[last_seg+1] #上一段的目标
                     err=np.max(np.abs(goal-scene.data.qpos[:7])) #上一段的最大误差
-                    name='LEFT'if last_seg==0 else 'RIGHT' if last_seg==1 else 'HOME'
-                    print(f"第 {last_seg}段完成：{name}，最大误差={err:.4f}rad，t={scene.data.time:.1f}s")
+                    name = f'joint1目标={plan.goals[last_seg+1][0]:+.2f}'
+                    print(f"第 {last_seg+1} 段完成：{name}，最大误差={err:.4f}rad，t={scene.data.time:.1f}s")
                     last_seg=plan.seg
                 if plan.finished(): #所有段都走完了，开始 settle
                     settle+=1
