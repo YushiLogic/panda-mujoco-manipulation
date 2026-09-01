@@ -52,6 +52,7 @@ nq 与 nv 差 1 的原因：四元数用 4 个数表示 3 个旋转自由度（�
 ## 发现与风险
 
 1. **joint4 默认 qpos0=0 超出上限 -0.0698**（illegal start）。`panda.xml` 内有现成但被注释的 home keyframe（qpos≈`0 0 0 -1.57079 0 3.0 -1.7853 0.04 0.04`）。Day 3 的 `reset_to_home` 必须显式设置 7 轴 home + 手指 + cube 初态。
+   - **出处考证（Day 4 追加）**：官方 mujoco_menagerie 原版的 keyframe 是生效且自洽的（joint6/7 的 qpos=ctrl=1.57079/-0.7853）；本地文件被人改为 joint6=3.0/joint7=-1.7853 但未同步 ctrl，随后整段被注释。即"qpos/ctrl 不一致"是本地编辑痕迹而非上游问题。本项目 home 采用本地姿态（已验证合法），不依赖文件内 keyframe。
 2. **夹爪控制量是 0–255** 而非弧度/米（由 0–0.04 m 行程重映射而来），与手臂执行器单位不同，写夹爪代码时勿混用。
 3. cube 的 `condim=4`（含扭转摩擦），摩擦 1.0/0.115/0.0001，抓取稳定性依赖这组参数；Day 3 接触检测要以 geom 名称（`cube_geom` ↔ 两侧 finger geom）配对判断。
 4. 自由关节的 qpos 是 7 维（位置+四元数），读取 cube 姿态时注意与 6 维速度 dof 的错位。
