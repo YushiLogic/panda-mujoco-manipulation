@@ -9,10 +9,10 @@ This portfolio project covers joint-space control, end-effector control, inverse
 - [x] Reproducible Python environment
 - [x] Installable Python package
 - [x] Headless MuJoCo environment check
-- [ ] Panda model integration
-- [ ] Reliable reset and home configuration
-- [ ] Joint-space position control
-- [ ] Gripper control and cube contact
+- [x] Panda model integration
+- [x] Reliable reset and home configuration
+- [x] Joint-space position control
+- [x] Gripper control and cube contact
 - [ ] End-effector control
 - [ ] Grasping task environment
 
@@ -47,6 +47,24 @@ Expected final output:
     Simulation time: 2.0 s
     Ball height: 0.0496 m
     Environment check: PASSED
+
+## Model Assets
+
+The Panda model assets are stored inside this repository at:
+
+    assets/robots/panda/scene_with_cube.xml
+
+The scene includes `panda.xml`, which loads mesh files from:
+
+    assets/robots/panda/assets/
+
+The original model license and source notes are preserved in:
+
+    assets/robots/panda/LICENSE
+    assets/robots/panda/README_original.md
+
+Keeping the model inside the repository makes the project reproducible without relying on a local external model folder.
+
 
 ## Project Structure
 

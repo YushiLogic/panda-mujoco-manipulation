@@ -17,15 +17,14 @@ from pathlib import Path
 import mujoco
 import numpy as np
 
-# 默认场景路径：从本文件反推项目根——
-#   parents[0]=panda_mujoco/  parents[1]=src/  parents[2]=panda_mujoco_manipulation/  parents[3]=Mujoco Project/
-# Day 6 把模型复制进仓库后，只需修改这一个常量。
-DEFAULT_SCENE = (
-    Path(__file__).resolve().parents[3]
-    / "model"
-    / "franka_emika_panda"
-    / "scene_with_cube.xml"
-)
+# 默认场景路径：从本文件反推项目根。
+#   parents[0]=panda_mujoco/
+#   parents[1]=src/
+#   parents[2]=panda_mujoco_manipulation/
+# Day 6 后，模型资产已经复制进仓库内的 assets/robots/panda，
+# 因此代码不再依赖外部的 D:\Mujoco Project\model 目录。
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SCENE = PROJECT_ROOT / "assets" / "robots" / "panda" / "scene_with_cube.xml"
 
 # home 位姿：9 个数 = 7 个手臂关节角（弧度）+ 2 个手指行程（米）。
 # 来源：panda.xml 被注释的 home keyframe 的 qpos 行。
