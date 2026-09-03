@@ -78,6 +78,7 @@ Keeping the model inside the repository makes the project reproducible without r
     ├── src/panda_mujoco/
     ├── tests/
     ├── environment.yml
+    ├── LICENSE
     ├── pyproject.toml
     └── README.md
 
@@ -107,3 +108,14 @@ Keeping the model inside the repository makes the project reproducible without r
 - Add tests and experiment logging
 - Record demonstration videos
 - Complete documentation and publish a GitHub release
+
+## License
+
+Except where otherwise noted, the original source code and documentation in
+this repository are licensed under the [Apache License 2.0](LICENSE).
+
+The bundled Franka Emika Panda model assets remain under their upstream
+Apache License 2.0. Their license and original source notes are preserved in:
+
+    assets/robots/panda/LICENSE
+    assets/robots/panda/README_original.md
