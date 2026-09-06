@@ -1,16 +1,14 @@
-"""测试 Panda 末端位姿读取接口。"""
+"""测试 Panda 末端位姿与 Jacobian 读取接口。
 
-'''
-测试1：防止位置返回错误维度或 NaN
-测试2：防止姿态矩阵不是合法旋转
-测试3：防止组合接口和单独接口结果不一致
-测试4：防止返回 MuJoCo 内部数组的可修改视图
-测试5：防止位姿函数返回固定常数，不响应 qpos
-'''
+测试1～5覆盖末端位置与旋转，测试6～8覆盖 Jacobian 的接口、
+返回值独立性，以及解析结果与中心有限差分的一致性。
+"""
 import mujoco
 import numpy as np
 
 from panda_mujoco.kinematics import (
+    ARM_JOINT_NAMES,
+    get_ee_jacobian,
     get_ee_pose,
     get_ee_position,
     get_ee_rotation_matrix,
@@ -112,3 +110,96 @@ def test_ee_pose_changes_when_joint1_changes() -> None:
 
     assert not np.allclose(position_after, position_before)
     assert not np.allclose(rotation_after, rotation_before)
+
+
+def test_ee_jacobian_has_expected_shape() -> None:
+    """末端线速度和角速度 Jacobian 都应为有限的 3×7 矩阵。"""
+
+    scene = PandaScene()
+
+    linear_jacobian, angular_jacobian = (
+        get_ee_jacobian(scene)
+    )
+
+    assert linear_jacobian.shape == (3, 7)
+    assert angular_jacobian.shape == (3, 7)
+
+    assert np.all(np.isfinite(linear_jacobian))
+    assert np.all(np.isfinite(angular_jacobian))
+
+
+def test_ee_jacobian_returns_independent_arrays() -> None:
+    """修改函数返回值不应影响下一次 Jacobian 计算。"""
+
+    scene = PandaScene()
+
+    expected_linear, expected_angular = (
+        get_ee_jacobian(scene)
+    )
+
+    linear_jacobian, angular_jacobian = (
+        get_ee_jacobian(scene)
+    )
+
+    # 故意破坏本次返回的数组。
+    linear_jacobian[:] = 100.0
+    angular_jacobian[:] = 100.0
+
+    actual_linear, actual_angular = (
+        get_ee_jacobian(scene)
+    )
+
+    np.testing.assert_allclose(
+        actual_linear,
+        expected_linear,
+    )
+
+    np.testing.assert_allclose(
+        actual_angular,
+        expected_angular,
+    )
+
+
+def test_linear_jacobian_matches_finite_difference() -> None:
+    """位置 Jacobian 应当与中心有限差分结果一致。"""
+
+    scene = PandaScene()
+    model = scene.model
+    data = scene.data
+
+    analytical_jacobian, _ = get_ee_jacobian(scene)
+
+    numerical_jacobian = np.zeros((3, 7))
+    reference_qpos = data.qpos.copy()
+    epsilon = 1e-6
+
+    for column, joint_name in enumerate(ARM_JOINT_NAMES):
+        joint_id = model.joint(joint_name).id
+        qpos_address = model.jnt_qposadr[joint_id]
+
+        # 正向扰动。
+        data.qpos[:] = reference_qpos
+        data.qpos[qpos_address] += epsilon
+        mujoco.mj_forward(model, data)
+        position_plus = get_ee_position(scene)
+
+        # 反向扰动。
+        data.qpos[:] = reference_qpos
+        data.qpos[qpos_address] -= epsilon
+        mujoco.mj_forward(model, data)
+        position_minus = get_ee_position(scene)
+
+        numerical_jacobian[:, column] = (
+            position_plus - position_minus
+        ) / (2.0 * epsilon)
+
+    # 测试结束后恢复原始状态。
+    data.qpos[:] = reference_qpos
+    mujoco.mj_forward(model, data)
+
+    np.testing.assert_allclose(
+        analytical_jacobian,
+        numerical_jacobian,
+        atol=1e-7,
+        rtol=0.0,
+    )
