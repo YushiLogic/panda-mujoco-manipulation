@@ -8,8 +8,10 @@ import numpy as np
 from panda_mujoco.kinematics import (
     ARM_JOINT_NAMES,
     get_ee_jacobian,
+    get_ee_pose,
     get_ee_position,
 )
+from panda_mujoco.rotations import rotation_error
 from panda_mujoco.simulation import PandaScene
 
 
@@ -22,6 +24,20 @@ class PositionIKResult:
     final_position: np.ndarray
     final_error: np.ndarray
     final_error_norm: float
+
+
+@dataclass
+class PoseIKResult:
+    """一次位置加姿态逆运动学求解的结果。"""
+
+    success: bool
+    iterations: int
+    final_position: np.ndarray
+    final_rotation: np.ndarray
+    final_position_error: np.ndarray
+    final_orientation_error: np.ndarray
+    final_position_error_norm: float
+    final_orientation_error_norm: float
 
 
 def _get_arm_joint_metadata(
@@ -281,4 +297,232 @@ def solve_position_ik(
         final_position=final_position,
         final_error=final_error,
         final_error_norm=final_error_norm,
+    )
+
+
+def solve_pose_ik(
+    scene: PandaScene,
+    target_position: np.ndarray,
+    target_rotation: np.ndarray,
+    *,
+    damping: float = 0.01,
+    position_tolerance: float = 1e-4,
+    orientation_tolerance: float = 1e-3,
+    max_iterations: int = 100,
+    max_joint_step: float = 0.1,
+) -> PoseIKResult:
+    """使用迭代 DLS 同时求解末端目标位置和姿态。
+
+    本函数只修改 ``scene.data.qpos`` 并调用 ``mj_forward``，
+    不会推进仿真时间。位置误差使用米，姿态误差使用弧度。
+
+    Args:
+        scene:
+            用于运动学求解的独立 Panda 场景。
+
+        target_position:
+            world frame 下的目标末端位置，形状为 ``(3,)``。
+
+        target_rotation:
+            目标末端坐标系相对于 world frame 的旋转矩阵，
+            形状为 ``(3, 3)``。
+
+        damping:
+            DLS 阻尼系数。
+
+        position_tolerance:
+            位置成功容差，单位为米。
+
+        orientation_tolerance:
+            姿态成功容差，单位为弧度。
+
+        max_iterations:
+            最大关节更新次数。
+
+        max_joint_step:
+            每次迭代中任一关节允许的最大变化，单位为弧度。
+
+    Returns:
+        包含成功状态、迭代次数、最终位姿和误差的
+        :class:`PoseIKResult`。
+    """
+
+    target_position = np.asarray(
+        target_position,
+        dtype=float,
+    ).copy()
+
+    target_rotation = np.asarray(
+        target_rotation,
+        dtype=float,
+    ).copy()
+
+    # ---------- 输入检查 ----------
+
+    if target_position.shape != (3,):
+        raise ValueError(
+            "target_position must have shape (3,)"
+        )
+
+    if not np.all(np.isfinite(target_position)):
+        raise ValueError(
+            "target_position must contain finite values"
+        )
+
+    # rotation_error() 同时检查 target_rotation 的形状、
+    # 有限性、正交性和行列式。这里调用一次即可提前失败。
+    _, current_rotation = get_ee_pose(scene)
+    rotation_error(target_rotation, current_rotation)
+
+    if (
+        not np.isfinite(position_tolerance)
+        or position_tolerance <= 0.0
+    ):
+        raise ValueError(
+            "position_tolerance must be positive and finite"
+        )
+
+    if (
+        not np.isfinite(orientation_tolerance)
+        or orientation_tolerance <= 0.0
+    ):
+        raise ValueError(
+            "orientation_tolerance must be positive and finite"
+        )
+
+    if not isinstance(max_iterations, int) or max_iterations <= 0:
+        raise ValueError(
+            "max_iterations must be a positive integer"
+        )
+
+    if (
+        not np.isfinite(max_joint_step)
+        or max_joint_step <= 0.0
+    ):
+        raise ValueError(
+            "max_joint_step must be positive and finite"
+        )
+
+    if not np.isfinite(damping) or damping <= 0.0:
+        raise ValueError(
+            "damping must be positive and finite"
+        )
+
+    qpos_addresses, lower_limits, upper_limits = (
+        _get_arm_joint_metadata(scene)
+    )
+
+    updates_used = 0
+
+    # ---------- 迭代 6D IK 主循环 ----------
+
+    for _ in range(max_iterations):
+        current_position, current_rotation = get_ee_pose(scene)
+
+        position_error = target_position - current_position
+        orientation_error = rotation_error(
+            target_rotation,
+            current_rotation,
+        )
+
+        position_error_norm = float(
+            np.linalg.norm(position_error)
+        )
+        orientation_error_norm = float(
+            np.linalg.norm(orientation_error)
+        )
+
+        # 两种误差必须同时满足各自容差。
+        if (
+            position_error_norm < position_tolerance
+            and orientation_error_norm < orientation_tolerance
+        ):
+            break
+
+        linear_jacobian, angular_jacobian = get_ee_jacobian(
+            scene
+        )
+        pose_jacobian = np.vstack(
+            [linear_jacobian, angular_jacobian]
+        )
+        pose_error = np.concatenate(
+            [position_error, orientation_error]
+        )
+
+        raw_delta_q = damped_least_squares(
+            pose_jacobian,
+            pose_error,
+            damping=damping,
+        )
+
+        # 统一缩放整个更新向量，避免逐元素裁剪破坏
+        # DLS 解中位置任务和姿态任务的协调方向。
+        maximum_raw_step = float(
+            np.max(np.abs(raw_delta_q))
+        )
+
+        if maximum_raw_step > max_joint_step:
+            delta_q = raw_delta_q * (
+                max_joint_step / maximum_raw_step
+            )
+        else:
+            delta_q = raw_delta_q
+
+        current_joint_positions = (
+            scene.data.qpos[qpos_addresses].copy()
+        )
+        candidate_joint_positions = (
+            current_joint_positions + delta_q
+        )
+
+        # 最终安全边界仍由 MJCF 关节限位决定。
+        limited_joint_positions = np.clip(
+            candidate_joint_positions,
+            lower_limits,
+            upper_limits,
+        )
+
+        scene.data.qpos[qpos_addresses] = (
+            limited_joint_positions
+        )
+
+        mujoco.mj_forward(
+            scene.model,
+            scene.data,
+        )
+
+        updates_used += 1
+
+    # ---------- 汇总最终结果 ----------
+
+    final_position, final_rotation = get_ee_pose(scene)
+    final_position_error = target_position - final_position
+    final_orientation_error = rotation_error(
+        target_rotation,
+        final_rotation,
+    )
+
+    final_position_error_norm = float(
+        np.linalg.norm(final_position_error)
+    )
+    final_orientation_error_norm = float(
+        np.linalg.norm(final_orientation_error)
+    )
+
+    success = (
+        final_position_error_norm < position_tolerance
+        and final_orientation_error_norm < orientation_tolerance
+    )
+
+    return PoseIKResult(
+        success=success,
+        iterations=updates_used,
+        final_position=final_position,
+        final_rotation=final_rotation,
+        final_position_error=final_position_error,
+        final_orientation_error=final_orientation_error,
+        final_position_error_norm=final_position_error_norm,
+        final_orientation_error_norm=(
+            final_orientation_error_norm
+        ),
     )

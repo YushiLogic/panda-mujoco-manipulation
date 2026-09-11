@@ -3,14 +3,17 @@
 import mujoco
 import numpy as np
 import pytest
+from scipy.spatial.transform import Rotation
 
 from panda_mujoco.ik import (
     damped_least_squares,
+    solve_pose_ik,
     solve_position_ik,
 )
 from panda_mujoco.kinematics import (
     ARM_JOINT_NAMES,
     get_ee_jacobian,
+    get_ee_pose,
     get_ee_position,
 )
 from panda_mujoco.simulation import PandaScene
@@ -129,6 +132,8 @@ def test_panda_dls_step_reduces_position_error() -> None:
     final_error = target_position - position_after
 
     assert np.linalg.norm(final_error) < np.linalg.norm(initial_error)
+
+
 def test_solve_position_ik_reaches_target() -> None:
     """迭代 IK 应当让 Panda 末端到达可达目标。"""
     scene = PandaScene()
@@ -208,3 +213,162 @@ def test_solve_position_ik_rejects_invalid_inputs() -> None:
             get_ee_position(scene),
             damping=0.0,
         )
+
+
+def test_solve_pose_ik_uses_zero_updates_at_target() -> None:
+    """当前位姿就是目标时，不应修改任何状态。"""
+
+    scene = PandaScene()
+    target_position, target_rotation = get_ee_pose(scene)
+    qpos_before = scene.data.qpos.copy()
+
+    result = solve_pose_ik(
+        scene,
+        target_position,
+        target_rotation,
+    )
+
+    assert result.success is True
+    assert result.iterations == 0
+    assert result.final_position_error_norm == pytest.approx(0.0)
+    assert result.final_orientation_error_norm == pytest.approx(0.0)
+
+    np.testing.assert_allclose(
+        scene.data.qpos,
+        qpos_before,
+        atol=0.0,
+    )
+
+
+def test_solve_pose_ik_reaches_world_z_rotation() -> None:
+    """6D IK 应在保持位置时完成世界 z 轴小角度旋转。"""
+
+    scene = PandaScene()
+    target_position, initial_rotation = get_ee_pose(scene)
+
+    target_rotation = (
+        Rotation.from_euler(
+            "z",
+            15.0,
+            degrees=True,
+        ).as_matrix()
+        @ initial_rotation
+    )
+
+    result = solve_pose_ik(
+        scene,
+        target_position,
+        target_rotation,
+    )
+
+    assert result.success is True
+    assert 0 < result.iterations <= 100
+    assert result.final_position_error_norm < 1e-4
+    assert result.final_orientation_error_norm < 1e-3
+
+    final_position, final_rotation = get_ee_pose(scene)
+
+    np.testing.assert_allclose(
+        result.final_position,
+        final_position,
+        atol=1e-12,
+    )
+    np.testing.assert_allclose(
+        result.final_rotation,
+        final_rotation,
+        atol=1e-12,
+    )
+
+
+def test_solve_pose_ik_reaches_position_and_rotation_target() -> None:
+    """位置和平移姿态目标同时改变时，两种误差都应收敛。"""
+
+    scene = PandaScene()
+    initial_position, initial_rotation = get_ee_pose(scene)
+
+    target_position = initial_position + np.array(
+        [0.01, -0.005, 0.005]
+    )
+    target_rotation = (
+        Rotation.from_euler(
+            "x",
+            10.0,
+            degrees=True,
+        ).as_matrix()
+        @ initial_rotation
+    )
+
+    result = solve_pose_ik(
+        scene,
+        target_position,
+        target_rotation,
+    )
+
+    assert result.success is True
+    assert result.final_position_error_norm < 1e-4
+    assert result.final_orientation_error_norm < 1e-3
+
+
+def test_solve_pose_ik_reports_failure_after_iteration_limit() -> None:
+    """迭代次数不足时，应返回失败及当前真实误差。"""
+
+    scene = PandaScene()
+    target_position, initial_rotation = get_ee_pose(scene)
+
+    target_rotation = (
+        Rotation.from_euler(
+            "z",
+            15.0,
+            degrees=True,
+        ).as_matrix()
+        @ initial_rotation
+    )
+
+    result = solve_pose_ik(
+        scene,
+        target_position,
+        target_rotation,
+        max_iterations=1,
+    )
+
+    assert result.success is False
+    assert result.iterations == 1
+    assert result.final_orientation_error_norm > 1e-3
+
+
+def test_solve_pose_ik_rejects_invalid_inputs() -> None:
+    """6D IK 应拒绝错误目标和非法求解参数。"""
+
+    scene = PandaScene()
+    target_position, target_rotation = get_ee_pose(scene)
+
+    with pytest.raises(ValueError, match="target_position"):
+        solve_pose_ik(
+            scene,
+            np.array([0.1, 0.2]),
+            target_rotation,
+        )
+
+    with pytest.raises(ValueError, match="target_rotation"):
+        solve_pose_ik(
+            scene,
+            target_position,
+            np.eye(4),
+        )
+
+    invalid_options = (
+        {"damping": 0.0},
+        {"position_tolerance": 0.0},
+        {"orientation_tolerance": 0.0},
+        {"max_iterations": 0},
+        {"max_joint_step": 0.0},
+    )
+
+    for invalid_option in invalid_options:
+        with pytest.raises(ValueError):
+            solve_pose_ik(
+                scene,
+                target_position,
+                target_rotation,
+                **invalid_option,
+            )
