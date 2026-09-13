@@ -13,7 +13,7 @@ This portfolio project covers joint-space control, end-effector control, inverse
 - [x] Reliable reset and home configuration
 - [x] Joint-space position control
 - [x] Gripper control and cube contact
-- [ ] End-effector control
+- [x] End-effector control
 - [ ] Grasping task environment
 
 ## Environment
@@ -47,6 +47,31 @@ Expected final output:
     Simulation time: 2.0 s
     Ball height: 0.0496 m
     Environment check: PASSED
+
+## Week 2 Acceptance
+
+Run the deterministic 50-target end-effector reach evaluation:
+
+    python examples/day14/evaluate_reach.py
+
+The current fixed-seed benchmark result is:
+
+    IK success:                 50/50
+    overall success:            50/50
+    success rate:               100.00%
+    mean successful error:      0.027230 mm
+    maximum successful error:   0.098611 mm
+    non-finite cases:           0
+    joint-limit violations:     0
+    Day 14 reach evaluation: PASSED
+
+Per-target metrics are stored in:
+
+    results/day14/reach_evaluation.csv
+
+These results apply to the documented fixed target range, home initial
+configuration, MuJoCo model, and ideal model-based bias compensation. They do
+not claim full-workspace or real-robot performance.
 
 ## Model Assets
 
