@@ -152,3 +152,64 @@ def test_invalid_geometry_parameters_are_rejected(
             np.array([0.45, 0.0, 0.02]),
             **keyword_arguments,
         )
+
+def test_grasp_rotation_follows_cube_yaw() -> None:
+    """夹爪水平轴必须跟随方块yaw旋转。"""
+
+    cube_yaw = np.deg2rad(30.0)
+
+    targets = generate_grasp_targets(
+        np.array([0.45, 0.0, 0.02]),
+        cube_yaw=cube_yaw,
+    )
+
+    cosine = np.cos(cube_yaw)
+    sine = np.sin(cube_yaw)
+
+    cube_rotation = np.array(
+        [
+            [cosine, -sine, 0.0],
+            [sine, cosine, 0.0],
+            [0.0, 0.0, 1.0],
+        ]
+    )
+
+    # 末端局部+x轴与方块局部+x轴同向。
+    np.testing.assert_allclose(
+        targets.rotation[:, 0],
+        cube_rotation[:, 0],
+        atol=1e-12,
+    )
+
+    # 末端局部+y轴与方块局部+y轴反向。
+    np.testing.assert_allclose(
+        targets.rotation[:, 1],
+        -cube_rotation[:, 1],
+        atol=1e-12,
+    )
+
+    # 接近方向仍然竖直向下。
+    np.testing.assert_allclose(
+        targets.rotation[:, 2],
+        np.array([0.0, 0.0, -1.0]),
+        atol=1e-12,
+    )
+
+
+@pytest.mark.parametrize(
+    "invalid_yaw",
+    [np.nan, np.inf, -np.inf],
+)
+def test_non_finite_cube_yaw_is_rejected(
+    invalid_yaw: float,
+) -> None:
+    """NaN和Inf不能作为方块yaw。"""
+
+    with pytest.raises(
+        ValueError,
+        match="cube_yaw",
+    ):
+        generate_grasp_targets(
+            np.array([0.45, 0.0, 0.02]),
+            cube_yaw=invalid_yaw,
+        )

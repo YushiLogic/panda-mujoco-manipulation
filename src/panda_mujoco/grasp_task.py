@@ -22,6 +22,43 @@ TOP_DOWN_GRASP_ROTATION = np.array(
     ],
     dtype=float,
 )
+
+
+def top_down_grasp_rotation(
+    cube_yaw: float,
+) -> np.ndarray:
+    """生成与方块yaw对齐的向下抓取姿态。
+
+    先让末端采用固定的向下抓取姿态，再绕世界z轴旋转
+    ``cube_yaw``。这样夹爪的水平轴会跟随方块边缘旋转，
+    而末端局部+z轴仍然指向世界-z方向。
+    """
+
+    cube_yaw = float(cube_yaw)
+
+    if not np.isfinite(cube_yaw):
+        raise ValueError(
+            "cube_yaw must be finite"
+        )
+
+    cosine = np.cos(cube_yaw)
+    sine = np.sin(cube_yaw)
+
+    world_z_rotation = np.array(
+        [
+            [cosine, -sine, 0.0],
+            [sine, cosine, 0.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=float,
+    )
+
+    return (
+        world_z_rotation
+        @ TOP_DOWN_GRASP_ROTATION
+    )
+
+
 # 默认预抓取点位于抓取点上方10厘米。
 DEFAULT_PREGRASP_DISTANCE = 0.10
 
@@ -48,6 +85,7 @@ class GraspTargets:
 def generate_grasp_targets(
     cube_position: np.ndarray,
     *,
+    cube_yaw: float = 0.0,
     pregrasp_distance: float = DEFAULT_PREGRASP_DISTANCE,
     grasp_z_offset: float = DEFAULT_GRASP_Z_OFFSET,
     lift_height: float = DEFAULT_LIFT_HEIGHT,
@@ -57,6 +95,10 @@ def generate_grasp_targets(
     Args:
         cube_position:
             方块中心在世界坐标系中的位置，形状为(3,)，单位为米。
+
+        cube_yaw:
+            方块绕世界z轴的旋转角，单位为弧度。夹爪的
+            水平方向会跟随该角度旋转。
 
         pregrasp_distance:
             预抓取点沿接近方向反方向离开抓取点的距离。
@@ -89,6 +131,13 @@ def generate_grasp_targets(
             "cube_position must contain finite values"
         )
 
+    cube_yaw = float(cube_yaw)
+
+    if not np.isfinite(cube_yaw):
+        raise ValueError(
+            "cube_yaw must be finite"
+        )
+
     # 预抓取距离必须为有限正数。
     if (
         not np.isfinite(pregrasp_distance)
@@ -119,8 +168,13 @@ def generate_grasp_targets(
     # 抓取点在方块中心基础上增加高度偏置。
     grasp_position[2] += grasp_z_offset
 
+    # 使向下抓取姿态绕世界z轴跟随方块yaw旋转。
+    target_rotation = top_down_grasp_rotation(
+        cube_yaw
+    )
+
     # 旋转矩阵第三列是末端局部+z轴，即接近方向。
-    approach_direction = TOP_DOWN_GRASP_ROTATION[:, 2]
+    approach_direction = target_rotation[:, 2]
 
     # 接近方向朝下，所以沿它的反方向退回，
     # 就能得到位于抓取点上方的预抓取点。
@@ -144,5 +198,5 @@ def generate_grasp_targets(
         pregrasp_position=pregrasp_position.copy(),
         grasp_position=grasp_position.copy(),
         lift_position=lift_position.copy(),
-        rotation=TOP_DOWN_GRASP_ROTATION.copy(),
+        rotation=target_rotation.copy(),
     )
