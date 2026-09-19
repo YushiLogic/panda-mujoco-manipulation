@@ -14,7 +14,8 @@ This portfolio project covers joint-space control, end-effector control, inverse
 - [x] Joint-space position control
 - [x] Gripper control and cube contact
 - [x] End-effector control
-- [ ] Grasping task environment
+- [x] Grasping task environment
+- [x] Deterministic random-grasp evaluation
 
 ## Environment
 
@@ -73,6 +74,41 @@ These results apply to the documented fixed target range, home initial
 configuration, MuJoCo model, and ideal model-based bias compensation. They do
 not claim full-workspace or real-robot performance.
 
+## Week 3 Acceptance
+
+Run the deterministic 20-episode random-grasp evaluation:
+
+    python examples/day21/week3_acceptance.py
+
+The current fixed-seed benchmark result is:
+
+    success count:              20/20
+    success rate:               100.00%
+    minimum successful lift:    7.728 cm
+    minimum successful hold:    0.500 s
+    non-finite cases:           0
+    joint-limit violations:     0
+    terminated episodes:        20
+    truncated episodes:         0
+    Week 3 random-grasp acceptance: PASSED
+
+Per-episode metrics are stored in:
+
+    results/day21/grasp_evaluation.csv
+
+Demonstration videos:
+
+- [Successful scripted grasp](results/day21/videos/week3_success_seed00.mp4)
+- [Injected contact-timeout failure](results/day21/videos/week3_failure_contact_timeout.mp4)
+
+The failure video intentionally limits gripper closing to one physics step so
+that `VERIFY_CONTACT` rejects the grasp. It is a state-machine diagnostic and
+is not part of the 20-episode random benchmark.
+
+These results apply only to seeds 0 through 19, the documented cube sampling
+range, the bundled MuJoCo model, and ideal simulation conditions. They do not
+establish full-workspace robustness or real-robot performance.
+
 ## Model Assets
 
 The Panda model assets are stored inside this repository at:
@@ -100,6 +136,7 @@ Keeping the model inside the repository makes the project reproducible without r
     ├── configs/
     ├── docs/
     ├── examples/
+    ├── results/
     ├── src/panda_mujoco/
     ├── tests/
     ├── environment.yml

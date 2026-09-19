@@ -9,6 +9,8 @@ description = "Panda manipulation and grasping experiments based on MuJoCo."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [
+    "imageio>=2.37,<3.0",
+    "imageio-ffmpeg>=0.6,<0.7",
     "mujoco>=3.12,<4.0",
     "matplotlib>=3.8,<4.0",
     "numpy>=2.2,<3.0",

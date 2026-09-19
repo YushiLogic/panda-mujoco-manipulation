@@ -120,6 +120,7 @@ def run_scripted_pick(
     scene: PandaScene,
     *,
     seed: int = 42,
+    reset_scene: bool = True,
     close_timeout: float = 1.0,
     hold_duration: float = 0.5,
     step_callback: StepCallback | None = None,
@@ -137,15 +138,51 @@ def run_scripted_pick(
     if hold_duration <= 0.0 or not np.isfinite(hold_duration):
         raise ValueError("hold_duration must be positive and finite")
 
+    if not isinstance(reset_scene, bool):
+        raise ValueError(
+            "reset_scene must be a bool"
+        )
+
     records: list[PickStageRecord] = []
 
-    # ---------- RESET：机器人回 home，方块按 seed 复位并落稳 ----------
-    scene.reset_to_home()
-    sampled_pose = sample_cube_pose(seed)
-    reset_cube(scene, sampled_pose)
-    settle_result = settle_cube(scene)
+    # ---------- RESET或检查已经由任务接口准备好的场景 ----------
+    if reset_scene:
+        scene.reset_to_home()
+        sampled_pose = sample_cube_pose(seed)
+        reset_cube(scene, sampled_pose)
+        settle_result = settle_cube(scene)
 
-    cube_position = settle_result.final_position.copy()
+        reset_success = settle_result.settled
+        reset_reason = (
+            "none"
+            if reset_success
+            else "cube_not_settled"
+        )
+        reset_duration = (
+            settle_result.simulation_duration
+        )
+        cube_position = (
+            settle_result.final_position.copy()
+        )
+    else:
+        # PandaPickTask.reset(seed)已经完成了home、方块随机化与落稳。
+        # 这里直接读取当前实际状态，避免step()悄悄开启第二个episode。
+        cube_position = (
+            scene.data.body("cube").xpos.copy()
+        )
+        reset_success = bool(
+            np.all(np.isfinite(scene.data.qpos))
+            and np.all(np.isfinite(scene.data.qvel))
+            and np.all(np.isfinite(scene.data.ctrl))
+            and np.all(np.isfinite(cube_position))
+        )
+        reset_reason = (
+            "none"
+            if reset_success
+            else "prepared_scene_not_finite"
+        )
+        reset_duration = 0.0
+
     cube_yaw = get_cube_yaw(scene)
     targets = generate_grasp_targets(cube_position, cube_yaw=cube_yaw)
     monitor = GraspMonitor(scene)
@@ -154,9 +191,9 @@ def run_scripted_pick(
     records.append(
         PickStageRecord(
             state=PickState.RESET,
-            success=settle_result.settled,
-            reason="none" if settle_result.settled else "cube_not_settled",
-            simulation_duration=settle_result.simulation_duration,
+            success=reset_success,
+            reason=reset_reason,
+            simulation_duration=reset_duration,
         )
     )
 
@@ -172,8 +209,11 @@ def run_scripted_pick(
             hold_duration=0.0,
         )
 
-    if not settle_result.settled:
-        return failed(PickState.RESET, "cube_not_settled")
+    if not reset_success:
+        return failed(
+            PickState.RESET,
+            reset_reason,
+        )
 
     open_gripper(scene)
 

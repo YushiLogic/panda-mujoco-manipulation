@@ -37,6 +37,10 @@ recordings/
 *.mp4
 *.avi
 
+# Curated Week 3 portfolio demonstrations
+!results/day21/videos/
+!results/day21/videos/*.mp4
+
 # Operating system
 .DS_Store
 Thumbs.db
