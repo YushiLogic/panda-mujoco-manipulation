@@ -29,6 +29,8 @@ dist/
 *.log
 *.tmp
 *.temp
+/output/
+/tmp/
 
 # Simulation outputs
 outputs/

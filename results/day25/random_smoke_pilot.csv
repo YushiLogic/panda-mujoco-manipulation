@@ -1,0 +1,4 @@
+seed,steps,episode_return,terminated,truncated,success,termination_reason,ik_failures,smoke_passed,error
+42,10,-1.347168404030814,False,True,False,time_limit,0,True,
+43,10,1.8066472669779394,False,True,False,time_limit,0,True,
+44,10,-0.5922953015081471,False,True,False,time_limit,0,True,
