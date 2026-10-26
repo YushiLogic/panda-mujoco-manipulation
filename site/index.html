@@ -1,0 +1,2205 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panda 机器人抓取方块 · 机器人学全流程讲解</title>
+<style>
+:root{
+  --orange:#ff6a00; --orange-soft:#fff1e6; --blue:#2563eb; --blue-soft:#e8f0fe;
+  --green:#0f9d58; --green-soft:#e6f6ee; --red:#d93025; --red-soft:#fce8e6;
+  --ink:#1c2430; --ink2:#475569; --line:#e3e8ef; --bg:#f6f8fb; --code-bg:#141b29;
+  --sidebar:#101725; --sidebar2:#1b2537;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color:var(--ink);background:var(--bg);line-height:1.78;font-size:16px}
+code,pre,.mono{font-family:"JetBrains Mono","SF Mono",Consolas,"Courier New",monospace}
+
+/* ---------- 侧边导航 ---------- */
+#nav{position:fixed;top:0;left:0;bottom:0;width:264px;background:linear-gradient(180deg,var(--sidebar),#0c1220);
+  color:#c8d2e0;overflow-y:auto;padding:26px 0 40px;z-index:50}
+#nav .brand{padding:0 22px 18px;border-bottom:1px solid #22304a;margin-bottom:14px}
+#nav .brand .logo{font-size:15px;font-weight:800;color:#fff;letter-spacing:.5px}
+#nav .brand .sub{font-size:12px;color:#7c8aa3;margin-top:4px}
+#nav a{display:block;color:#aeb9cc;text-decoration:none;font-size:13.5px;padding:7px 22px;border-left:3px solid transparent;transition:all .15s}
+#nav a:hover{color:#fff;background:#172033}
+#nav a.active{color:#ffb27a;border-left-color:var(--orange);background:#172033}
+#nav .grp{padding:14px 22px 5px;font-size:11px;color:#5d6b82;letter-spacing:2px;font-weight:700}
+#main{margin-left:264px;min-width:0}
+.wrap{max-width:940px;margin:0 auto;padding:0 38px}
+
+/* ---------- Hero ---------- */
+header.hero{background:radial-gradient(1200px 420px at 75% -10%,#26364f 0%,#141b29 55%,#0f1521 100%);
+  color:#eef2f8;padding:74px 0 60px;position:relative;overflow:hidden}
+header.hero::after{content:"";position:absolute;right:-120px;top:-120px;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,106,0,.28),transparent 65%)}
+.hero .tag{display:inline-block;font-size:12.5px;letter-spacing:2px;color:#ffb27a;border:1px solid rgba(255,106,0,.5);
+  border-radius:999px;padding:4px 14px;margin-bottom:22px}
+.hero h1{font-size:38px;line-height:1.3;font-weight:800;max-width:760px}
+.hero h1 em{font-style:normal;color:var(--orange)}
+.hero p.lead{margin-top:18px;color:#b6c2d4;font-size:16px;max-width:720px}
+.hero .meta{margin-top:26px;font-size:13px;color:#8494ab;display:flex;gap:26px;flex-wrap:wrap}
+.hero .meta b{color:#d7deea;font-weight:600}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:40px;position:relative;z-index:2}
+.metric{background:rgba(255,255,255,.05);border:1px solid #2a3950;border-radius:14px;padding:18px 16px;backdrop-filter:blur(4px)}
+.metric .v{font-size:27px;font-weight:800;color:#fff;line-height:1.2}
+.metric .v small{font-size:14px;color:#9fb0c8;font-weight:600}
+.metric .k{font-size:12.5px;color:#93a3bb;margin-top:6px}
+.metric:nth-child(1) .v{color:#ffb27a}.metric:nth-child(2) .v{color:#7dd3fc}
+.metric:nth-child(3) .v{color:#86efac}.metric:nth-child(4) .v{color:#c4b5fd}
+
+/* ---------- 章节 ---------- */
+section{padding:52px 0 12px}
+h2{font-size:27px;font-weight:800;margin-bottom:8px;display:flex;align-items:baseline;gap:12px}
+h2 .no{font-size:14px;color:#fff;background:var(--orange);border-radius:8px;padding:2px 10px;font-weight:700;white-space:nowrap}
+h3{font-size:19.5px;margin:34px 0 10px;font-weight:750;color:#172033}
+h4{font-size:16px;margin:22px 0 8px;font-weight:700;color:#243044}
+p{margin:10px 0;color:#33405a}
+ul,ol{margin:10px 0 10px 24px}li{margin:6px 0;color:#33405a}
+strong{color:#0f172a}
+a.inline{color:var(--blue);text-decoration:none;border-bottom:1px dashed #93b4f5}
+.small{font-size:13.5px;color:var(--ink2)}
+hr.sep{border:none;border-top:1px solid var(--line);margin:44px 0 0}
+
+/* ---------- 代码 / 公式 / 表格 / 卡片 ---------- */
+pre{background:var(--code-bg);color:#d6e0f0;border-radius:12px;padding:18px 20px;overflow-x:auto;font-size:13.2px;line-height:1.7;margin:16px 0}
+pre .c{color:#7d8da8}pre .k{color:#ffb27a}pre .s{color:#9ece8a}pre .n{color:#7dd3fc}
+code:not(pre code){background:#eef1f6;color:#c2410c;border-radius:6px;padding:2px 7px;font-size:13.5px}
+.formula{background:#fff;border:1px solid var(--line);border-left:4px solid var(--orange);border-radius:10px;
+  padding:16px 22px;margin:16px 0;font-size:15.5px;overflow-x:auto;text-align:center}
+.formula .lhs{color:#0f172a;font-weight:700}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;background:#fff;border-radius:12px;overflow:hidden;
+  box-shadow:0 1px 3px rgba(15,23,42,.06)}
+th{background:#1b2537;color:#e6ecf5;text-align:left;padding:11px 14px;font-weight:650;font-size:13.5px}
+td{padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:#fafbfd}
+.callout{border-radius:12px;padding:15px 19px;margin:16px 0;font-size:14.5px;border:1px solid}
+.callout b{display:block;margin-bottom:4px;font-size:14.5px}
+.callout.tip{background:var(--blue-soft);border-color:#bcd4fb}
+.callout.tip b{color:#1d4ed8}
+.callout.warn{background:var(--red-soft);border-color:#f3c2bd}
+.callout.warn b{color:#b3261e}
+.callout.ok{background:var(--green-soft);border-color:#b3e2cb}
+.callout.ok b{color:#0b7a42}
+.callout.note{background:var(--orange-soft);border-color:#ffd2ad}
+.callout.note b{color:#c2520a}
+.pill{display:inline-block;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700}
+.pill.g{background:var(--green-soft);color:var(--green)}
+.pill.r{background:var(--red-soft);color:var(--red)}
+.pill.o{background:var(--orange-soft);color:#c2520a}
+.pill.b{background:var(--blue-soft);color:var(--blue)}
+
+/* ---------- 架构层图 ---------- */
+.layers{margin:22px 0;display:flex;flex-direction:column;gap:8px}
+.layer{display:grid;grid-template-columns:150px 1fr;gap:0;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+.layer .lname{color:#fff;font-weight:750;font-size:14.5px;display:flex;align-items:center;padding:14px 16px}
+.layer .ldesc{background:#fff;padding:13px 18px;font-size:13.8px;color:#33405a;border:1px solid var(--line);border-left:none;border-radius:0 12px 12px 0}
+.layer:nth-child(1) .lname{background:#7c3aed}.layer:nth-child(2) .lname{background:#2563eb}
+.layer:nth-child(3) .lname{background:#0891b2}.layer:nth-child(4) .lname{background:#ea580c}
+.layer:nth-child(5) .lname{background:#334155}
+.arrow-down{text-align:center;color:#94a3b8;font-size:18px;line-height:1}
+
+/* ---------- FSM ---------- */
+.fsm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:20px 0}
+.fsm .st{background:#fff;border:2px solid var(--line);border-radius:10px;padding:9px 13px;font-size:13.5px;font-weight:700;color:#243044;box-shadow:0 1px 2px rgba(15,23,42,.06)}
+.fsm .st.hl{border-color:var(--orange);background:var(--orange-soft);color:#c2520a}
+.fsm .st.fail{border-color:var(--red);background:var(--red-soft);color:var(--red)}
+.fsm .ar{color:#94a3b8;font-weight:800}
+.stagegrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:18px 0}
+.stagecard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:15px 17px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.stagecard .h{display:flex;justify-content:space-between;align-items:center;font-weight:750;margin-bottom:6px}
+.stagecard .h .t{color:#c2520a}
+.stagecard p{font-size:13.5px;margin:3px 0}
+
+/* ---------- SVG 图表 ---------- */
+.chartcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px 22px 12px;margin:20px 0;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.chartcard h4{margin-top:0}
+.chartcard svg{width:100%;height:auto;display:block}
+.legend{display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin-top:8px;padding-left:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:7px;vertical-align:middle}
+.legend .sw{width:12px;height:12px;border-radius:3px;height:12px}
+.tip{position:pointer}
+.gridline{stroke:#eef1f6;stroke-width:1}
+.axis{stroke:#94a3b8;stroke-width:1.2}
+.axislabel{fill:#64748b;font-size:11.5px;font-family:inherit}
+.tick{fill:#64748b;font-size:11px;font-family:inherit}
+
+/* ---------- 抓取几何示意 ---------- */
+.geo-wrap{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin:18px 0}
+
+/* ---------- 代码地图 ---------- */
+.mapgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}
+.mapitem{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 15px;font-size:13.5px}
+.mapitem code{font-size:12.5px;background:#eef1f6}
+.mapitem b{color:#c2520a}
+
+/* ---------- 路径 ---------- */
+.path{counter-reset:step;margin:18px 0;padding:0;list-style:none}
+.path li{position:relative;padding:14px 16px 14px 58px;background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;counter-increment:step}
+.path li::before{content:counter(step);position:absolute;left:16px;top:14px;width:30px;height:30px;border-radius:50%;
+  background:var(--orange);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:14px}
+.path li b{color:#172033}
+
+/* ---------- 下载 ---------- */
+.dlgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+.dlcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dlcard .ico{font-size:30px}
+.dlcard h4{margin:10px 0 6px}
+.dlcard p{font-size:13px;margin:4px 0}
+footer{background:#0f1521;color:#8494ab;font-size:13px;padding:34px 0;margin-top:60px}
+footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+footer b{color:#dbe3ef}
+
+@media(max-width:1080px){
+  #nav{display:none}
+  #main{margin-left:0}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .stagegrid,.mapgrid{grid-template-columns:1fr}
+  .dlgrid{grid-template-columns:1fr}
+  .layer{grid-template-columns:110px 1fr}
+}
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="brand">
+    <div class="logo">🤖 Panda 抓取讲解站</div>
+    <div class="sub">panda-mujoco-manipulation</div>
+  </div>
+  <div class="grp">总览</div>
+  <a href="#overview">0 · 全局架构与成果</a>
+  <div class="grp">基础原理</div>
+  <a href="#body">1 · 机器人本体结构</a>
+  <a href="#physics">2 · 物理仿真与动力学</a>
+  <a href="#control">3 · 执行器与重力补偿</a>
+  <a href="#kinematics">4 · 运动学 FK / Jacobian</a>
+  <a href="#ik">5 · 逆运动学 DLS</a>
+  <a href="#planning">6 · 轨迹规划与执行</a>
+  <div class="grp">抓取专题</div>
+  <a href="#grasp-geo">7 · 抓取几何</a>
+  <a href="#contact">8 · 接触感知与判定</a>
+  <a href="#fsm">9 · 抓取状态机</a>
+  <div class="grp">工程与拓展</div>
+  <a href="#experiment">10 · 可复现实验方法</a>
+  <a href="#rl">11 · Gymnasium 与强化学习</a>
+  <a href="#sim2real">12 · Sim-to-Real 差距</a>
+  <a href="#codemap">13 · 概念→代码地图</a>
+  <a href="#path">14 · 学习路径</a>
+  <a href="#download">15 · 成果下载方式</a>
+</nav>
+
+<div id="main">
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap">
+    <span class="tag">MUJOCO 3.12 · FRANKA EMKA PANDA · 实测驱动讲解</span>
+    <h1>以 Panda 机器人抓取方块为例，<br>讲透<em>机器人操作（Manipulation）</em>的全部核心原理</h1>
+    <p class="lead">本站基于仓库 <b>panda-mujoco-manipulation</b> 的真实源码与实测数据，从刚体动力学到强化学习接口，
+      把一次抓取涉及的机器人学知识逐层讲清。所有图表均由项目实际运行数据渲染，可在 <code style="background:#22304a;color:#ffb27a">site/data/measurements.json</code> 中复核。</p>
+    <div class="meta">
+      <span>物理步长 <b>2 ms</b></span><span>积分器 <b>implicitfast</b></span>
+      <span>状态维度 <b>nq=16 / nv=15 / nu=8</b></span><span>方块 <b>4 cm · 0.064 kg</b></span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="v">20<small>/20</small></div><div class="k">随机种子脚本抓取成功率</div></div>
+      <div class="metric"><div class="v">0.027<small> mm</small></div><div class="k">50 目标平均到达误差</div></div>
+      <div class="metric"><div class="v">7.73<small> cm</small></div><div class="k">最小成功抬升高度</div></div>
+      <div class="metric"><div class="v">32</div><div class="k">成功抓取的指尖接触点数</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= 0 OVERVIEW ================= -->
+<section id="overview"><div class="wrap">
+  <h2><span class="no">0</span>全局架构：一次抓取被拆成五个层级</h2>
+  <p>人类"伸手抓方块"是一个动作，工程上被拆成 <strong>策略 → 任务 → 规划 → 控制 → 物理</strong> 五个独立层级。
+    本仓库每个层级对应独立模块，层与层之间通过明确的数据结构通信，这是机器人软件工程区别于"调脚本"的关键。</p>
+  <div class="layers">
+    <div class="layer"><div class="lname">策略层 Policy</div><div class="ldesc">脚本状态机 / 随机策略 / SAC 策略 —— <code>pick_controller.py · reach_env.py · continuous_env.py</code></div></div>
+    <div class="arrow-down">▼</div>
+    <div class="layer"><div class="lname">任务层 Task</div><div class="ldesc">抓取目标几何、接触语义、成功判定、奖励 —— <code>grasp_task.py · contact.py · rewards.py · termination.py</code></div></div>
+    <div class="arrow-down">▼</div>
+    <div class="layer"><div class="lname">规划层 Planning</div><div class="ldesc">逆运动学 IK、轨迹插值 —— <code>ik.py · kinematics.py · motion.py · cartesian_trajectory.py</code></div></div>
+    <div class="arrow-down">▼</div>
+    <div class="layer"><div class="lname">控制层 Control</div><div class="ldesc">位置伺服命令、夹爪命令、重力补偿 —— <code>arm_control.py · gripper.py · action_mapping.py</code></div></div>
+    <div class="arrow-down">▼</div>
+    <div class="layer"><div class="lname">物理层 Physics</div><div class="ldesc">MuJoCo 刚体动力学、碰撞接触、数值积分 —— <code>simulation.py · panda.xml · scene_with_cube.xml</code></div></div>
+  </div>
+
+  <h3>一次抓取的完整时序（状态机 9 阶段，seed=42 实测）</h3>
+  <div class="fsm">
+    <span class="st">RESET</span><span class="ar">→</span>
+    <span class="st hl">MOVE_ABOVE</span><span class="ar">→</span>
+    <span class="st hl">APPROACH</span><span class="ar">→</span>
+    <span class="st hl">CLOSE_GRIPPER</span><span class="ar">→</span>
+    <span class="st">VERIFY_CONTACT</span><span class="ar">→</span>
+    <span class="st hl">LIFT</span><span class="ar">→</span>
+    <span class="st hl">CHECK_SUCCESS</span><span class="ar">→</span>
+    <span class="st" style="border-color:var(--green);background:var(--green-soft);color:var(--green)">DONE</span>
+  </div>
+  <div class="callout note"><b>实测数据（本页图表全部来自同一次运行）</b>
+    MOVE_ABOVE 4.52 s → APPROACH 2.52 s → 夹爪闭合 0.19 s → LIFT 2.52 s → 稳定保持 0.50 s；最终方块抬升约 7.7 cm，双侧共 32 个接触点。</div>
+</div></section>
+
+<!-- ================= 1 BODY ================= -->
+<section id="body"><div class="wrap"><hr class="sep">
+  <h2><span class="no">1</span>机器人本体：7-DOF 冗余臂与平行夹爪</h2>
+
+  <h3>1.1 为什么是 7 个关节而不是 6 个</h3>
+  <p>末端在空间中的位姿只有 <strong>6 个自由度</strong>（3 位置 + 3 姿态）。6 轴臂到达指定位姿时构型唯一；
+    Panda 的 7 个旋转关节（joint1–joint7）多出 1 个<strong>冗余自由度</strong>：同一末端位姿对应无穷多组关节角，
+    机器人可利用这个"零空间"避障、避开关节极限、优化灵巧度。</p>
+  <div class="callout tip"><b>本项目实测验证</b>对末端 site 计算的 6×7 雅可比矩阵秩为 6，零空间维数 = 7 − 6 = <b>1</b>，
+    与冗余理论完全一致（见第 4 节）。</div>
+
+  <h3>1.2 自由度账本：nq=16、nv=15、nu=8</h3>
+  <table>
+    <tr><th>向量</th><th>维度</th><th>构成</th></tr>
+    <tr><td><code>qpos</code> 广义位置</td><td>16</td><td>7 铰链关节角 + 2 手指平动行程 + 方块自由关节（3 位置 + 4 四元数）</td></tr>
+    <tr><td><code>qvel</code> 广义速度</td><td>15</td><td>7 臂 + 2 指 + 方块 6 速度（3 线速度 + 3 角速度）</td></tr>
+    <tr><td><code>ctrl</code> 控制量</td><td>8</td><td>7 个手臂电机 + 1 个夹爪电机（一个电机经腱传动驱动双指）</td></tr>
+  </table>
+  <p class="small">关键记忆：铰链/平动关节占 1 个 qpos 和 1 个 qvel；自由关节占 7 个 qpos、6 个 qvel（四元数 4 个数但只有 3 个旋转自由度）；执行器数 ≠ 关节数。</p>
+
+  <h3>1.3 关节限位与 home 姿态的"坑"</h3>
+  <table>
+    <tr><th>关节</th><th>运动学范围 (rad)</th><th>力矩限制</th><th>说明</th></tr>
+    <tr><td>joint1</td><td>±2.8973 (±166°)</td><td>±87 N·m</td><td>底座回转</td></tr>
+    <tr><td>joint2</td><td>±1.7628 (±101°)</td><td>±87 N·m</td><td>肩关节</td></tr>
+    <tr><td>joint3</td><td>±2.8973</td><td>±87 N·m</td><td>肘部上方</td></tr>
+    <tr><td><b>joint4</b></td><td><b>[−3.0718, −0.0698]</b></td><td>±87 N·m</td><td>肘弯关节，<b>全为负、不允许过零</b></td></tr>
+    <tr><td>joint5</td><td>±2.8973</td><td>±12 N·m</td><td>腕部</td></tr>
+    <tr><td>joint6</td><td>[−0.0175, 3.7525]</td><td>±12 N·m</td><td>腕部</td></tr>
+    <tr><td>joint7</td><td>±2.8973</td><td>±12 N·m</td><td>法兰盘旋转</td></tr>
+  </table>
+  <div class="callout warn"><b>为什么 home 姿态必须把 joint4 设为 −1.57079</b>
+    joint4 的限位不包含 0。若以默认 0 位启动，初始状态直接非法，PD 伺服会产生"开机甩动"。
+    <code>simulation.py</code> 的 <code>PANDA_HOME_QPOS = [0,0,0,−1.57079,0,3.0,−1.7853, 0.04,0.04]</code> 让肘部弯 90°，落在限位中段。</div>
+
+  <h3>1.4 三类几何对象：body / geom / site</h3>
+  <ul>
+    <li><strong>body（连杆刚体）</strong>：携带 <code>&lt;inertial&gt;</code> 质量、质心、惯量张量，决定动力学方程的 M、g 项。如 link1 质量 4.97 kg。</li>
+    <li><strong>geom（几何形状）</strong>分两类：<span class="pill b">visual</span> 视觉网格 <code>contype=0</code> 只渲染不碰撞；
+      <span class="pill o">collision</span> 碰撞几何参与物理计算。指尖用 5 个小 box 近似软垫，比真实曲面网格接触更稳定。全模型 83 个 geom。</li>
+    <li><strong>site（命名参考点）</strong>：无质量、不碰撞的纯坐标系标记。项目唯一的 <code>ee_center_site</code> 位于手掌内，是 IK 与观测读取的"末端点"。</li>
+  </ul>
+
+  <h3>1.5 夹爪机构：腱传动 + 等式约束 + 255 命令映射</h3>
+  <p>真实 Panda 夹爪的双指由一个电机对中驱动，模型用三个机制还原：</p>
+  <pre><span class="c">&lt;!-- 1. fixed tendon：一个执行器行程按 0.5/0.5 分给两指 --&gt;</span>
+<span class="k">&lt;tendon&gt;</span>&lt;fixed name=<span class="s">"split"</span>&gt;
+  &lt;joint joint=<span class="s">"finger_joint1"</span> coef=<span class="s">"0.5"</span>/&gt;
+  &lt;joint joint=<span class="s">"finger_joint2"</span> coef=<span class="s">"0.5"</span>/&gt;
+<span class="k">&lt;/tendon&gt;</span>
+<span class="c">&lt;!-- 2. equality：强制两指位置始终相等（对中） --&gt;</span>
+<span class="k">&lt;equality&gt;</span>&lt;joint joint1=<span class="s">"finger_joint1"</span> joint2=<span class="s">"finger_joint2"</span> .../&gt;<span class="k">&lt;/equality&gt;</span>
+<span class="c">&lt;!-- 3. actuator8：真实 API 的 0–255 命令映射到 0–0.04 m 行程 --&gt;</span>
+<span class="c">&lt;!-- 0.04 × 100 / 255 = 0.015686... --&gt;</span></pre>
+  <p>应用层 <code>gripper.py</code> 再封装为直观的开口宽度接口：<code>width_to_ctrl(w) = 255 × w / 0.08</code>
+    （应用口径是双指总宽度 0–0.08 m，单指行程 0–0.04 m，相差 2 倍）。</p>
+</div></section>
+
+<!-- ================= 2 PHYSICS ================= -->
+<section id="physics"><div class="wrap"><hr class="sep">
+  <h2><span class="no">2</span>物理仿真：MuJoCo 每一步在算什么</h2>
+
+  <h3>2.1 带约束的刚体动力学方程</h3>
+  <div class="formula">
+    <span class="lhs">M(q)·q̈ + c(q,q̇) + g(q) = τ + J<sub>c</sub><sup>T</sup>·f<sub>c</sub></span>
+  </div>
+  <ul>
+    <li><strong>M(q)</strong>：广义质量矩阵（含连杆惯量与电机转子等效惯量）；</li>
+    <li><strong>c(q,q̇)</strong>：科氏力与离心力项，转速越高越大；<strong>g(q)</strong>：重力项；</li>
+    <li><strong>τ</strong>：执行器输出的广义力；<strong>J<sub>c</sub><sup>T</sup>f<sub>c</sub></strong>：接触约束经雅可比转置映射的等效力。</li>
+  </ul>
+  <p>MuJoCo 把 c + g 合并存入 <code>data.qfrc_bias</code>（偏置力）——这是第 3 节重力补偿的关键。</p>
+
+  <h3>2.2 数值积分：2 ms 步长与 implicitfast</h3>
+  <p>仿真把连续微分方程离散成递推。步长太大刚体会在一步内"穿过"彼此，导致接触爆炸；本项目步长 <strong>0.002 s</strong>。
+    <strong>implicitfast</strong> 隐式积分器在更新速度时隐式考虑下一步的阻尼/接触力，比显式 Euler 稳定得多，且开销小。</p>
+  <p>模型还为每个关节配置 <code>armature="0.1"</code>（电机转子折算的等效转动惯量）与 <code>damping="1"</code>
+    （黏性阻尼 N·m·s/rad），吸收高频振荡——真实电机本就存在转子惯量与摩擦，这是物理建模而非"作弊"。</p>
+
+  <h3>2.3 软接触模型与方块参数</h3>
+  <pre><span class="c">&lt;!-- scene_with_cube.xml --&gt;</span>
+&lt;geom name=<span class="s">"cube_geom"</span> type=<span class="s">"box"</span> size=<span class="s">"0.02 0.02 0.02"</span>
+      condim=<span class="s">"4"</span> friction=<span class="s">"1.0 0.115 0.0001"</span>/&gt;</pre>
+  <ul>
+    <li><strong>condim=4</strong>：1 个法向力 + 3 个切向摩擦分量（2 滑动 + 1 扭转）；</li>
+    <li><strong>friction</strong>：滑动摩擦 μ=1.0、扭转 0.115、滚动 0.0001；</li>
+    <li>方块质量 0.064 kg → 重力仅 <strong>0.628 N</strong>，不大的夹持力即可靠摩擦拿住；</li>
+    <li>MuJoCo 接触是<strong>软接触</strong>：靠 <code>solref/solimp</code> 生成随穿透深度增大的弹簧-阻尼法向力；
+      <code>data.contact</code> 只记录当前帧（有效项 <code>data.ncon</code>），不保存历史。</li>
+  </ul>
+</div></section>
+
+<!-- ================= 3 CONTROL ================= -->
+<section id="control"><div class="wrap"><hr class="sep">
+  <h2><span class="no">3</span>执行器模型与重力补偿</h2>
+
+  <h3>3.1 位置执行器本质是 PD 控制器</h3>
+  <p>以 actuator1 为例：<code>gainprm="4500" biasprm="0 -4500 -450"</code>，MuJoCo 执行器输出 = gain 项 + bias 项：</p>
+  <div class="formula"><span class="lhs">τ = 4500·ctrl + (−4500·q − 450·q̇) = 4500(ctrl − q) − 450·q̇</span></div>
+  <p>这就是标准 PD 位置伺服：<strong>kp = 4500 N·m/rad，kd = 450 N·m·s/rad</strong>。
+    你写入的 <code>ctrl</code> 是<u>目标关节角</u>而非力矩；<code>forcerange</code> 模拟电机力矩饱和（大关节 87 N·m、腕关节 12 N·m）。</p>
+  <div class="formula" style="text-align:left;font-size:14.5px">
+    目标关节角 ctrl &nbsp;→&nbsp; PD 执行器 &nbsp;→&nbsp; 关节力矩 τ &nbsp;→&nbsp; 动力学积分 &nbsp;→&nbsp; 实际 qpos / qvel
+  </div>
+  <div class="callout warn"><b>控制纪律</b><code>arm_control.py</code> 的 <code>command_arm_joint_positions()</code> 只写 <code>data.ctrl</code>，
+    绝不直接改 <code>qpos</code>——直接改 qpos 等于让机器人"瞬移"，绕过了全部动力学，不是真实控制。</div>
+
+  <h3>3.2 重力（偏置）补偿：本项目最关键的控制细节</h3>
+  <p>PD 增益按动态响应整定，而重力是恒定扰动，会让手臂在静止目标下依然下垂。工业机器人的标准解法是
+    <strong>前馈重力补偿</strong>：把当前姿态下抵消重力所需的力矩直接加上。</p>
+  <pre><span class="c"># arm_control.py —— 每个 mj_step 之前调用，因为 qfrc_bias 随 qpos/qvel 每步变化</span>
+<span class="k">def</span> apply_arm_bias_compensation(scene):
+    dof = _get_arm_dof_addresses(scene)
+    scene.data.qfrc_applied[dof] = scene.data.qfrc_bias[dof]  <span class="c"># 前馈 c(q,q̇)+g(q)</span></pre>
+  <p>实测 home 姿态各关节所需补偿力矩（N·m）：</p>
+  <div class="formula mono" style="font-size:14px">[ 0.000 , <b style="color:var(--red)">−29.06</b> , 0.000 , <b style="color:var(--red)">21.75</b> , 0.695 , 2.011 , 0.029 ]</div>
+  <p>joint2/joint4 靠近肩部、力臂长，承担整条手臂重量——与直觉一致。真机上 libfranka 同样提供 gravity / Coriolis 力矩向量做前馈。</p>
+
+  <div class="chartcard">
+    <h4>📊 对照实验：同一 home 位置命令，仿真 0.5 s 后的末端漂移</h4>
+    <div id="chart-gravity"></div>
+    <div class="legend"><span><i class="sw" style="background:var(--green)"></i>开启偏置补偿</span>
+      <span><i class="sw" style="background:var(--red)"></i>关闭补偿（仅 PD 硬扛重力）</span></div>
+  </div>
+  <div class="callout ok"><b>结论</b>开启补偿后漂移 <b>0.00 mm</b>、关节零偏移；关闭后末端下坠 <b>9.31 mm</b>、最大关节偏移 0.37°。
+    这解释了 <code>motion.py</code> 轨迹循环里为何<u>每一个物理步前都必须重新补偿</u>。</div>
+</div></section>
+
+<!-- ================= 4 KINEMATICS ================= -->
+<section id="kinematics"><div class="wrap"><hr class="sep">
+  <h2><span class="no">4</span>运动学：从关节角到末端位姿</h2>
+
+  <h3>4.1 三种旋转表示（项目全部用到）</h3>
+  <table>
+    <tr><th>表示</th><th>维度</th><th>项目位置</th><th>特点</th></tr>
+    <tr><td>旋转矩阵 R</td><td>3×3</td><td>IK 目标姿态、site 的 xmat</td><td>9 数含 6 约束（正交且 det=+1），便于坐标变换</td></tr>
+    <tr><td>四元数</td><td>4 (wxyz)</td><td>方块 free joint 状态、yaw_to_quaternion</td><td>无奇异、插值平滑，适合存储</td></tr>
+    <tr><td>旋转向量 rotvec</td><td>3</td><td>rotation_error 的输出</td><td>方向=转轴，模长=转角，适合做误差</td></tr>
+  </table>
+  <p>姿态误差定义（<code>rotations.py</code>）：先求相对旋转 <code>R_rel = R_target · R_currentᵀ</code>，再取 rotvec 得到 3 维误差向量。
+    模块还严格校验 RᵀR=I 且 det(R)=+1，排除含镜像的非法矩阵。</p>
+
+  <h3>4.2 正运动学（FK）</h3>
+  <div class="formula"><span class="lhs">T<sub>0,ee</sub>(q) = T<sub>01</sub>(q<sub>1</sub>)·T<sub>12</sub>(q<sub>2</sub>)·…·T<sub>67</sub>(q<sub>7</sub>)·T<sub>7,ee</sub></span></div>
+  <p>本项目无需手写变换矩阵：MuJoCo 在每次 <code>mj_forward / mj_step</code> 后沿运动学树自动算出所有 body、site 的世界坐标，
+    <code>data.site("ee_center_site").xpos / .xmat</code> 就是 FK 结果，<code>kinematics.py</code> 只做干净封装。</p>
+
+  <h3>4.3 雅可比矩阵：关节速度 ↔ 末端速度的线性映射</h3>
+  <div class="formula"><span class="lhs">[ v<sub>e</sub> ; ω<sub>e</sub> ] = J(q)·q̇</span></div>
+  <p><code>get_ee_jacobian()</code> 经 <code>mj_jacSite</code> 取出 3×7 线速度雅可比 Jv 与 3×7 角速度雅可比 Jw，堆叠为 6×7。两个核心概念：</p>
+  <ul>
+    <li><strong>奇异位形</strong>：正常秩为 6（行满秩），末端可向任意方向运动；关节轴共线时 J 降秩，某些方向需要无穷大关节速度。冗余设计正是为减少奇异。</li>
+    <li><strong>冗余零空间</strong>：6×7 矩阵的零空间维数 = 1。存在非零 q̇₀ 使 J·q̇₀ = 0——末端不动、肘部自调整构型。</li>
+  </ul>
+</div></section>
+
+<!-- ================= 5 IK ================= -->
+<section id="ik"><div class="wrap"><hr class="sep">
+  <h2><span class="no">5</span>逆运动学：阻尼最小二乘（DLS）</h2>
+  <p>IK 回答"想让末端到达 (p*, R*)，7 个关节角该是多少"。7 轴 Panda 解析解繁琐，项目采用数值迭代的
+    <strong>DLS（Damped Least Squares，Levenberg–Marquardt 思路）</strong>，实现在 <code>ik.py</code>。</p>
+
+  <h3>5.1 推导：从伪逆到阻尼解</h3>
+  <p>一阶近似 e ≈ J·Δq。普通最小二乘 Δq = J⁺e 在奇异附近伪逆爆炸。DLS 给目标增加关节运动量惩罚：</p>
+  <div class="formula"><span class="lhs">min<sub>Δq</sub> &nbsp;‖J·Δq − e‖² + λ²·‖Δq‖²</span></div>
+  <div class="formula"><span class="lhs">Δq = J<sup>T</sup>·(J·J<sup>T</sup> + λ²I)<sup>−1</sup>·e</span></div>
+  <p>对照 <code>damped_least_squares()</code>：先解 <code>(JJᵀ + λ²I)·y = e</code> 再返回 <code>Jᵀy</code>
+    （用 <code>np.linalg.solve</code> 而非显式求逆，数值更稳定）。阻尼 λ（默认 0.01–0.05）的折中：λ→0 收敛快但奇异附近不稳；λ 大则平滑但变慢。</p>
+
+  <h3>5.2 迭代流程与工程细节</h3>
+  <ol>
+    <li>FK 读取当前位姿，计算位置误差 e<sub>p</sub> 与姿态误差 e<sub>o</sub>（rotvec）；</li>
+    <li>两者均低于容差（位置 1e-4 m、姿态 1e-3 rad）→ 成功；</li>
+    <li><strong>每轮重算雅可比</strong>（姿态变 J 就变）；DLS 求 Δq；</li>
+    <li>单关节单步限幅 0.1 rad（位姿 IK 用<u>整体等比缩放</u>而非逐元素裁剪，保护位置/姿态任务的协调方向）；</li>
+    <li>裁剪到关节限位 → 写 qpos → <code>mj_forward</code> 重算 FK（<u>不推进仿真时间</u>）。</li>
+  </ol>
+  <div class="callout note"><b>规划场景与执行场景分离</b>IK 直接改 qpos 是纯运动学操作。
+    <code>plan_pose_target()</code> 新建独立 <code>planning_scene</code>（独立 MjData）跑 IK，只把目标关节角带回控制场景走动力学轨迹，防止机器人"瞬移"。</div>
+
+  <div class="chartcard">
+    <h4>📊 实测：位姿 IK 的收敛曲线（目标 = 方块上方预抓取点，对数纵轴）</h4>
+    <div id="chart-ik"></div>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>位置误差 (m)</span>
+      <span><i style="background:var(--orange)"></i>姿态误差 (rad)</span>
+      <span><i style="background:var(--green);height:2px;border-top:1px dashed var(--green);background:none"></i>收敛容差</span>
+    </div>
+  </div>
+  <div class="callout ok"><b>实测结果</b>32–33 次迭代收敛，最终位置误差 <b>1 µm</b>、姿态误差 1.6e-6 rad。
+    Day 14 的 50 目标批量评测 IK 成功率 50/50，平均到达误差 0.027 mm。</div>
+</div></section>
+
+<!-- ================= 6 PLANNING ================= -->
+<section id="planning"><div class="wrap"><hr class="sep">
+  <h2><span class="no">6</span>轨迹生成与运动控制</h2>
+  <p>IK 只给终点关节角，机器人不能瞬间跳过去，需要一条随时间变化的轨迹。</p>
+
+  <h3>6.1 关节空间线性插值</h3>
+  <p><code>linear_joint_trajectory()</code> 用 <code>np.linspace</code> 在起终点关节角间等距插值，生成 N×7 航点（MOVE_ABOVE 用 201 个）。
+    选择关节空间而非笛卡尔直线插值，是因为每个中间点都保证是合法关节角、不会撞限位；代价是末端轨迹不是严格空间直线（本任务路径开阔，可接受）。
+    <code>cartesian_trajectory.py</code> 另提供笛卡尔航点 + 逐点 IK 方案用于需要直线接近的场合。</p>
+
+  <h3>6.2 执行节奏与时间账</h3>
+  <pre>for 每个航点:
+    写入 ctrl（PD 目标角）
+    保持 10 个物理步（physics_steps_per_command=10）
+        每步: 重力补偿 → mj_step
+航点发完后 settle 250 步保持最终目标，消除残余振动</pre>
+  <div class="formula mono" style="font-size:14px">MOVE_ABOVE = 201 × 10 × 2 ms + 250 × 2 ms = <b style="color:var(--orange)">4.52 s</b>（与实测逐位吻合）</div>
+  <p><code>settle_steps</code> 稳定段让 PD 残余振荡收敛到验收容差（位置 2 mm、姿态 1°）以内。
+    <code>move_end_effector_to()</code> 返回结构化 <code>MotionResult</code>，按优先级报告失败原因：
+    非有限状态 → 关节越限 → 位置容差 → 姿态容差 → 成功，让每次运动都可客观验收。</p>
+</div></section>
+
+<!-- ================= 7 GRASP GEOMETRY ================= -->
+<section id="grasp-geo"><div class="wrap"><hr class="sep">
+  <h2><span class="no">7</span>抓取任务的几何原理</h2>
+
+  <h3>7.1 自上而下姿态与 yaw 对齐</h3>
+  <pre>TOP_DOWN_GRASP_ROTATION = [[1,0,0],
+                           [0,-1,0],
+                           [0,0,-1]]</pre>
+  <p>旋转矩阵的列 = 末端坐标轴在世界系中的指向：末端局部 +z（接近轴）指向世界 <b>−z（竖直向下）</b>，
+    局部 +y（夹爪张合轴）指向世界 −y。方块只随机化绕世界 z 轴的 yaw（±30°，保持直立），
+    <code>top_down_grasp_rotation(yaw)</code> 再左乘 Rz(yaw)，让夹爪水平轴<u>跟随方块边缘旋转</u>，保证两指平行于方块对侧面。</p>
+
+  <h3>7.2 预抓取 / 抓取 / 抬升三点法（seed=42 实测坐标）</h3>
+  <div class="geo-wrap">
+    <svg viewBox="0 0 760 330" xmlns="http://www.w3.org/2000/svg" font-family="inherit">
+      <!-- floor -->
+      <line x1="40" y1="270" x2="720" y2="270" class="axis" stroke-dasharray="6 5"/>
+      <text x="700" y="290" class="axislabel">地面 z=0</text>
+      <!-- vertical guide -->
+      <line x1="380" y1="40" x2="380" y2="250" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="4 4"/>
+      <!-- cube -->
+      <rect x="356" y="234" width="48" height="36" fill="#ef4444" opacity="0.85" rx="3"/>
+      <text x="414" y="256" class="axislabel" fill="#b91c1c">方块 4cm (0.466, −0.007)</text>
+      <!-- pregrasp -->
+      <circle cx="380" cy="70" r="9" fill="#2563eb"/>
+      <text x="400" y="66" class="axislabel" fill="#1d4ed8" font-weight="700">pregrasp 预抓取点 z=0.125</text>
+      <text x="400" y="82" class="axislabel">抓取点上方 10 cm，安全悬停</text>
+      <!-- grasp -->
+      <circle cx="380" cy="210" r="9" fill="#ea580c"/>
+      <text x="400" y="206" class="axislabel" fill="#c2520a" font-weight="700">grasp 抓取点 z=0.025</text>
+      <text x="400" y="222" class="axislabel">方块中心 +5 mm，指尖包住两侧</text>
+      <!-- lift -->
+      <circle cx="380" cy="120" r="9" fill="#0f9d58"/>
+      <text x="120" y="116" class="axislabel" fill="#0b7a42" font-weight="700">lift 抬升点 z=0.105</text>
+      <text x="120" y="132" class="axislabel">夹住后竖直抬起 8 cm</text>
+      <!-- arrows -->
+      <path d="M380,84 L380,196" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+      <path d="M380,196 L380,134" stroke="#0f9d58" stroke-width="2.5" fill="none" marker-end="url(#arr)"/>
+      <text x="300" y="150" class="axislabel" fill="#2563eb">APPROACH 垂直接近</text>
+      <text x="395" y="165" class="axislabel" fill="#0b7a42">LIFT 垂直抬升</text>
+      <defs><marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#475569"/></marker></defs>
+    </svg>
+  </div>
+  <div class="callout tip"><b>为什么是经典三点法</b>把困难的接触运动限制在单一竖直方向：水平移动只发生在安全高度（pregrasp），
+    接近与抬升都是竖直直线，显著降低碰撞与不确定性。</div>
+</div></section>
+
+<!-- ================= 8 CONTACT ================= -->
+<section id="contact"><div class="wrap"><hr class="sep">
+  <h2><span class="no">8</span>接触感知与抓取成功判定</h2>
+
+  <h3>8.1 从 data.contact 到任务语义</h3>
+  <p>引擎只给裸 geom ID，而指尖 geom 无名且每指由多个碰撞 geom 组成。<code>contact.py</code> 建立
+    <strong>body → geom 集合</strong>映射层解决：</p>
+  <div class="formula mono" style="font-size:14px;text-align:left">
+    body 名(left_finger / right_finger / cube) → body ID → 该 body 拥有的全部 geom ID 集合<br>
+    每个接触项 (geom1, geom2) → 是否分别命中「手指集合 × 方块集合」（geom 顺序不固定，两个方向都查）
+  </div>
+
+  <h3>8.2 单帧接触 ≠ 稳定抓取：时间滤波</h3>
+  <p><code>BilateralContactTracker</code> 要求双侧接触<strong>连续</strong>保持 ≥ 0.1 s（50 个物理步）才计为持久接触，
+    中断一帧计数清零——本质是对二值信号做时间滤波，滤除擦碰毛刺。</p>
+
+  <h3>8.3 摩擦握持的力平衡</h3>
+  <div class="formula"><span class="lhs">方块重力 mg = 0.064 × 9.81 ≈ 0.628 N &nbsp;⇒&nbsp; μ=1.0 时总法向夹持力 ≥ 0.63 N 即可</span></div>
+  <p>实测成功抓取后：左右指各 16 个接触点（共 <strong>32 个</strong>，指尖多 box geom 所致），单点法向力约 0.06 N、
+    总法向力约 1.9 N，裕量充足；方块–地面接触为 0。注意：<strong>接触条目数不是接触力</strong>，力须经 <code>mj_contactForce</code> 读取。</p>
+
+  <h3>8.4 GraspMonitor 的两级多重判据</h3>
+  <table>
+    <tr><th>语义级别</th><th>条件</th><th>用途</th></tr>
+    <tr><td><code>grasp_candidate</code></td><td>持久双侧接触 <b>且</b> 夹爪宽度 ∈ [0.005, 0.075] m</td><td>闭合后、抬升前的放行检查</td></tr>
+    <tr><td><code>grasp_success</code></td><td>candidate <b>且</b> 离地 ≥ 5 cm <b>且</b> 线速度 ≤ 0.02 m/s、角速度 ≤ 0.2 rad/s <b>且</b> 不触地</td><td>最终验收</td></tr>
+  </table>
+  <p><code>reason</code> 按优先级输出未满足的首项（no_bilateral_contact / cube_not_lifted / cube_not_stable…），失败可诊断。
+    监测器只读不写，严格遵循观测与控制分离。</p>
+</div></section>
+
+<!-- ================= 9 FSM ================= -->
+<section id="fsm"><div class="wrap"><hr class="sep">
+  <h2><span class="no">9</span>任务编排：有限状态机（FSM）</h2>
+  <p><code>pick_controller.py</code> 用 9 状态 FSM 把全部能力串成完整任务：每状态做一件事，转移条件明确，失败可定位到具体阶段。</p>
+  <div class="stagegrid">
+    <div class="stagecard"><div class="h">RESET <span class="pill g">实测 1.50 s</span></div><p>回 home、采样方块、动力学自然落稳；落不稳 → FAILED(cube_not_settled)</p></div>
+    <div class="stagecard"><div class="h">MOVE_ABOVE <span class="pill g">4.52 s</span></div><p>IK + 关节轨迹到预抓取点；IK 失败/越限/容差不达标 → FAILED</p></div>
+    <div class="stagecard"><div class="h">APPROACH <span class="pill g">2.52 s</span></div><p>保持抓取姿态垂直下降到 grasp 点</p></div>
+    <div class="stagecard"><div class="h">CLOSE_GRIPPER <span class="pill g">0.19 s</span></div><p>发闭合命令，最多等 1 s，形成持久双侧接触即提前结束</p></div>
+    <div class="stagecard"><div class="h">VERIFY_CONTACT <span class="pill o">0 s 纯裁决</span></div><p><b>不发任何动作</b>，只读监测器；非 candidate → FAILED（接触故障）</p></div>
+    <div class="stagecard"><div class="h">LIFT <span class="pill g">2.52 s</span></div><p>保持闭合运动到 lift 点，全程监测；方块没离地 → FAILED</p></div>
+    <div class="stagecard"><div class="h">CHECK_SUCCESS <span class="pill g">0.50 s</span></div><p>要求<b>连续</b> 0.5 s 全部满足成功判据，中断清零重来</p></div>
+    <div class="stagecard"><div class="h">DONE / FAILED <span class="pill b">输出 PickResult</span></div><p>含每阶段成功标志、原因、耗时的完整记录</p></div>
+  </div>
+  <div class="callout note"><b>两个设计精髓</b>
+    ① VERIFY_CONTACT 独立成态：README 的失败演示视频故意只让夹爪闭合一个物理步，FSM 在此正确拒绝抓取，证明故障检出真实有效；
+    ② CHECK_SUCCESS 用连续成功帧而非单帧判定，防止方块瞬间离地又滑落被误判成功。</div>
+
+  <div class="chartcard">
+    <h4>📊 实测：完整抓取过程的多变量时序（seed=42，绿色底纹 = 双侧接触期间）</h4>
+    <div id="chart-timeline"></div>
+    <div class="legend">
+      <span><i style="background:var(--blue)"></i>末端 z 高度 (m)</span>
+      <span><i style="background:var(--red)"></i>方块 z 高度 (m)</span>
+      <span><i style="background:var(--orange)"></i>夹爪开口宽度 (m)</span>
+      <span><i class="sw" style="background:#dcfce7"></i>双侧接触</span>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= 10 EXPERIMENT ================= -->
+<section id="experiment"><div class="wrap"><hr class="sep">
+  <h2><span class="no">10</span>可复现实验方法学</h2>
+  <h3>10.1 随机化与确定性</h3>
+  <ul>
+    <li><code>np.random.default_rng(seed)</code> 创建<strong>局部 RNG</strong>，不污染全局随机状态，同 seed 永远产生同一位姿
+      （x∈[0.42,0.48] m，y∈[−0.06,0.06] m，yaw∈±30°）；</li>
+    <li>方块先置于 5 cm 高度再靠<strong>真实动力学自然落稳</strong>（settle_cube），避免初始穿透；</li>
+    <li><code>reset_to_home()</code> 是<strong>绝对写入</strong>而非增量调整，天然幂等，连 reset 10 次逐位相同；</li>
+    <li>复位后自动断言关节限位与有限性（无 NaN/Inf），非法状态当场暴露。</li>
+  </ul>
+  <h3>10.2 三层验收基准</h3>
+  <table>
+    <tr><th>评测</th><th>脚本</th><th>指标</th><th>实测结果</th></tr>
+    <tr><td>到达 Reach</td><td class="mono">day14/evaluate_reach.py</td><td>50 固定目标成功率/误差</td><td><b>50/50，平均 0.027 mm</b></td></tr>
+    <tr><td>脚本抓取</td><td class="mono">day21/week3_acceptance.py</td><td>20 随机 seed 成功率、抬升、保持</td><td><b>20/20，最小抬升 7.73 cm，保持 0.5 s</b></td></tr>
+    <tr><td>学习到达</td><td class="mono">Day 27 held-out</td><td>10 未见 seed 末端误差</td><td>SAC 86 mm vs 随机 789 mm</td></tr>
+  </table>
+  <div class="callout tip"><b>科研素养</b>每次评测落盘逐样本 CSV，并明确声明适用边界（固定 seed 范围、捆绑模型、理想仿真），
+    不做超出实验支持的泛化宣称。</div>
+</div></section>
+
+<!-- ================= 11 RL ================= -->
+<section id="rl"><div class="wrap"><hr class="sep">
+  <h2><span class="no">11</span>学习式路线：Gymnasium 与强化学习</h2>
+  <h3>11.1 观测向量（29 维，具名切片杜绝魔法下标）</h3>
+  <pre>[0:7]   手臂 7 关节角        [7:14]  手臂 7 关节速度      [14]    夹爪宽度
+[15:18] 末端位置 xyz          [18:21] 方块位置 xyz          [21:23] 方块 yaw 的 sin/cos
+[23:26] 方块线速度            [26:29] 方块角速度</pre>
+  <p class="small">yaw 用 sin/cos 连续编码，避免 ±π 处的角度跳变。</p>
+  <h3>11.2 动作空间（7 维连续 ∈[−1,1]）与奖励</h3>
+  <ul>
+    <li>3 维位置增量（每步最大 2 mm）+ 3 维旋转增量（每步最大 2°，旋转向量→旋转矩阵）+ 1 维夹爪宽度增量；</li>
+    <li><code>action_mapping.py</code> 裁剪后映射为笛卡尔目标 → IK 转关节目标 → PD 执行；每个 env step 内含 10 个物理步（20 ms 决策周期）；</li>
+    <li><strong>奖励塑形</strong>：位置/姿态误差下降量（progress reward）+ 首次持久接触一次性 bonus + 抬升增量 + 成功 +5 大奖 − 动作能量小惩罚；</li>
+    <li><strong>终止语义</strong>：<code>terminated</code> = 任务自然结束；<code>truncated</code> = 达到 500 步上限被截断，<u>不代表失败</u>，bootstrap 处理不同。</li>
+  </ul>
+  <h3>11.3 两条路线共用同一套底层</h3>
+  <div class="formula mono" style="font-size:14px">
+    脚本 FSM ─→ 运动原语 ─→ IK ─→ 关节位置控制 ─→ MuJoCo<br>
+    SAC 策略 ─→ 笛卡尔增量动作 ─→ IK ─→ 关节位置控制 ─→ MuJoCo
+  </div>
+  <div class="callout note"><b>诚实的基线</b>SAC（最大熵强化学习）100k 步把平均误差从 789 mm 降到 86 mm，证明学到了有用的趋近行为，
+    但尚未达到成功阈值，且 Week 4 刻意只做 Reach（夹爪保持张开），不宣称掌握抓取。</div>
+</div></section>
+
+<!-- ================= 12 SIM2REAL ================= -->
+<section id="sim2real"><div class="wrap"><hr class="sep">
+  <h2><span class="no">12</span>Sim-to-Real：仿真与真机的差距清单</h2>
+  <table>
+    <tr><th>仿真中的理想化</th><th>真机现实</th><th>应对方向</th></tr>
+    <tr><td>精确 qpos / 方块位置直读</td><td>编码器、相机感知含噪声与延迟</td><td>视觉伺服、状态估计、噪声建模</td></tr>
+    <tr><td>qfrc_bias 完美重力补偿</td><td>参数误差、未建模摩擦</td><td>动力学历辨识、自适应控制</td></tr>
+    <tr><td>PD 增益固定、瞬时响应</td><td>1 kHz 控制周期、通信延迟、力矩纹波</td><td>实时控制、阻抗控制</td></tr>
+    <tr><td>摩擦系数给定 μ=1.0</td><td>随材质/油污/温度变化</td><td>力传感器、触觉感知</td></tr>
+    <tr><td>网格接触稳定无抖动</td><td>冲击、振动、磨损</td><td>柔性指尖、力控闭合</td></tr>
+    <tr><td>方块位姿完全已知</td><td>需要物体检测与 6D 位姿估计</td><td>点云 / Dex-Net 类抓取规划</td></tr>
+  </table>
+  <div class="callout ok"><b>项目已具备的 Sim2Real 正确实践</b>方块位置/朝向随机化就是<strong>域随机化（Domain Randomization）</strong>的雏形；
+    RL 训练时扩大随机范围是缩小现实差距的主流手段。</div>
+</div></section>
+
+<!-- ================= 13 CODE MAP ================= -->
+<section id="codemap"><div class="wrap"><hr class="sep">
+  <h2><span class="no">13</span>概念 → 代码文件地图</h2>
+  <div class="mapgrid">
+    <div class="mapitem"><b>模型加载/复位</b><br><code>simulation.py</code> · PandaScene.reset_to_home</div>
+    <div class="mapitem"><b>FK / 雅可比</b><br><code>kinematics.py</code> · mj_jacSite</div>
+    <div class="mapitem"><b>旋转数学</b><br><code>rotations.py</code> · rotation_error</div>
+    <div class="mapitem"><b>逆运动学 DLS</b><br><code>ik.py</code> · solve_pose_ik</div>
+    <div class="mapitem"><b>关节控制/重力补偿</b><br><code>arm_control.py</code></div>
+    <div class="mapitem"><b>夹爪控制</b><br><code>gripper.py</code> · 0–255 映射</div>
+    <div class="mapitem"><b>轨迹/运动原语</b><br><code>motion.py · cartesian_trajectory.py</code></div>
+    <div class="mapitem"><b>抓取几何</b><br><code>grasp_task.py</code> · 三点法</div>
+    <div class="mapitem"><b>方块随机化/落稳</b><br><code>cube_reset.py</code></div>
+    <div class="mapitem"><b>接触/抓取判定</b><br><code>contact.py</code> · GraspMonitor</div>
+    <div class="mapitem"><b>抓取状态机</b><br><code>pick_controller.py</code> · PickState</div>
+    <div class="mapitem"><b>任务边界</b><br><code>panda_pick_task.py</code> · 29 维观测</div>
+    <div class="mapitem"><b>RL 环境/动作映射</b><br><code>continuous_env.py · action_mapping.py</code></div>
+    <div class="mapitem"><b>奖励/终止/Gym 适配</b><br><code>rewards.py · termination.py · gym_env.py</code></div>
+  </div>
+</div></section>
+
+<!-- ================= 14 PATH ================= -->
+<section id="path"><div class="wrap"><hr class="sep">
+  <h2><span class="no">14</span>推荐复盘学习路径</h2>
+  <ol class="path">
+    <li><b>建立直觉</b>：读 <code>docs/glossary.md</code> 与 <code>panda_xml_walkthrough.md</code>，理解 XML → MjModel/MjData。</li>
+    <li><b>跑 home demo</b>：运行 <code>examples/panda_home_demo.py</code>，对照第 2–3 节理解 ctrl / qpos / qfrc_bias。</li>
+    <li><b>手推 IK</b>：读 <code>ik.py</code> 的 DLS，自己推导 Δq = Jᵀ(JJᵀ+λ²I)⁻¹e，再跑 Day 14 评测。</li>
+    <li><b>画状态机</b>：读 <code>grasp_task.py</code> + <code>pick_controller.py</code>，手绘状态转移图。</li>
+    <li><b>攻克接触</b>：读 <code>contact.py</code>，理解"为什么单帧接触不够"与多重成功判据。</li>
+    <li><b>看验收与视频</b>：跑 <code>day21/week3_acceptance.py</code>，观看 results/day21/videos 的成功与失败演示。</li>
+    <li><b>进入 RL</b>：读 <code>continuous_env.py</code> + <code>rewards.py</code>，理解环境四要素。</li>
+    <li><b>拓展挑战</b>：给方块加质量/摩擦随机化、把关节插值换成笛卡尔直线、或加入力控奖励，向 Sim2Real 推进一步。</li>
+  </ol>
+</div></section>
+
+<!-- ================= 15 DOWNLOAD ================= -->
+<section id="download"><div class="wrap"><hr class="sep">
+  <h2><span class="no">15</span>最终成果如何下载</h2>
+  <p>本网站是<strong>纯静态、零依赖、完全离线可用</strong>的单页应用（HTML/CSS/JS 全部内联，数据已嵌入），
+    下载后双击 <code>index.html</code> 即可在任意浏览器打开，无需安装任何环境。三种下载方式任选：</p>
+  <div class="dlgrid">
+    <div class="dlcard">
+      <div class="ico">🗜️</div>
+      <h4>方式一：下载 ZIP 压缩包</h4>
+      <p>工作区已打包 <code>panda_robotics_website.zip</code>，在 Arena 左侧文件面板找到该文件 → 右键下载；解压后打开 index.html。</p>
+    </div>
+    <div class="dlcard">
+      <div class="ico">🐙</div>
+      <h4>方式二：从 GitHub 获取</h4>
+      <p>网站与讲解文档已提交到当前分支，推送后在 GitHub 仓库页 Code → Download ZIP，或 <code>git clone</code> 整个仓库。</p>
+    </div>
+    <div class="dlcard">
+      <div class="ico">📄</div>
+      <h4>方式三：另存 PDF / 打印</h4>
+      <p>在浏览器打开本网址后按 <code>Ctrl/⌘ + P</code> → 目标选"另存为 PDF"，即可得到带完整图表的 PDF 版讲解。</p>
+    </div>
+  </div>
+  <div class="callout note"><b>交付物清单</b>
+    ① <code>site/index.html</code> 本讲解网站（自包含）；② <code>site/data/measurements.json</code> 全部实测数据；
+    ③ <code>docs/grasping_knowledge_guide.md</code> 680 行 Markdown 版完整讲解；④ <code>panda_robotics_website.zip</code> 打包成果。</div>
+</div></section>
+
+<footer>
+  <div class="wrap">
+    <div><b>Panda MuJoCo Manipulation · 机器人学全流程讲解站</b><br>所有数值均来自仓库模型在 MuJoCo 3.12 中的真实运行</div>
+    <div>物理步长 2 ms · nq=16 nv=15 nu=8 · 抓取基准 20/20</div>
+  </div>
+</footer>
+
+</div><!-- /main -->
+
+<script>
+// ===== 内联实测数据（构建时注入，保证 file:// 离线可用）=====
+const DATA = {
+ "ik_curve": [
+  [
+   0.7053573,
+   2.7129239
+  ],
+  [
+   0.6977509,
+   2.6853925
+  ],
+  [
+   0.6905085,
+   2.6590431
+  ],
+  [
+   0.6834675,
+   2.6332476
+  ],
+  [
+   0.6764897,
+   2.6074706
+  ],
+  [
+   0.6694512,
+   2.5812328
+  ],
+  [
+   0.6622343,
+   2.5540813
+  ],
+  [
+   0.6547202,
+   2.525562
+  ],
+  [
+   0.6467811,
+   2.4951923
+  ],
+  [
+   0.6382724,
+   2.4624307
+  ],
+  [
+   0.6290234,
+   2.4266425
+  ],
+  [
+   0.6188253,
+   2.3870582
+  ],
+  [
+   0.6074174,
+   2.3427245
+  ],
+  [
+   0.594471,
+   2.2924469
+  ],
+  [
+   0.5795721,
+   2.2347359
+  ],
+  [
+   0.5622136,
+   2.1677801
+  ],
+  [
+   0.5418103,
+   2.0895095
+  ],
+  [
+   0.5177725,
+   1.9978487
+  ],
+  [
+   0.4896677,
+   1.8912585
+  ],
+  [
+   0.4574482,
+   1.7694725
+  ],
+  [
+   0.4215871,
+   1.6339125
+  ],
+  [
+   0.3829142,
+   1.4871198
+  ],
+  [
+   0.3421818,
+   1.3313037
+  ],
+  [
+   0.2996587,
+   1.166931
+  ],
+  [
+   0.2548894,
+   0.991759
+  ],
+  [
+   0.2073304,
+   0.8032618
+  ],
+  [
+   0.1614509,
+   0.6200473
+  ],
+  [
+   0.1175178,
+   0.4450497
+  ],
+  [
+   0.0767219,
+   0.2852397
+  ],
+  [
+   0.0410581,
+   0.1499377
+  ],
+  [
+   0.0123085,
+   0.0450706
+  ],
+  [
+   0.0003154,
+   0.0017357
+  ],
+  [
+   1.3e-06,
+   1.6e-06
+  ]
+ ],
+ "gravity": {
+  "with_comp": 0.0,
+  "without_comp": 9.314,
+  "bias_torques": [
+   0.0,
+   -29.06,
+   0.0,
+   21.754,
+   0.695,
+   2.011,
+   0.029
+  ]
+ },
+ "timeline": {
+  "t": [
+   1.502,
+   1.548,
+   1.594,
+   1.64,
+   1.686,
+   1.732,
+   1.778,
+   1.824,
+   1.87,
+   1.916,
+   1.962,
+   2.008,
+   2.054,
+   2.1,
+   2.146,
+   2.192,
+   2.238,
+   2.284,
+   2.33,
+   2.376,
+   2.422,
+   2.468,
+   2.514,
+   2.56,
+   2.606,
+   2.652,
+   2.698,
+   2.744,
+   2.79,
+   2.836,
+   2.882,
+   2.928,
+   2.974,
+   3.02,
+   3.066,
+   3.112,
+   3.158,
+   3.204,
+   3.25,
+   3.296,
+   3.342,
+   3.388,
+   3.434,
+   3.48,
+   3.526,
+   3.572,
+   3.618,
+   3.664,
+   3.71,
+   3.756,
+   3.802,
+   3.848,
+   3.894,
+   3.94,
+   3.986,
+   4.032,
+   4.078,
+   4.124,
+   4.17,
+   4.216,
+   4.262,
+   4.308,
+   4.354,
+   4.4,
+   4.446,
+   4.492,
+   4.538,
+   4.584,
+   4.63,
+   4.676,
+   4.722,
+   4.768,
+   4.814,
+   4.86,
+   4.906,
+   4.952,
+   4.998,
+   5.044,
+   5.09,
+   5.136,
+   5.182,
+   5.228,
+   5.274,
+   5.32,
+   5.366,
+   5.412,
+   5.458,
+   5.504,
+   5.55,
+   5.596,
+   5.642,
+   5.688,
+   5.734,
+   5.78,
+   5.826,
+   5.872,
+   5.918,
+   5.964,
+   6.01,
+   6.056,
+   6.102,
+   6.148,
+   6.194,
+   6.24,
+   6.286,
+   6.332,
+   6.378,
+   6.424,
+   6.47,
+   6.516,
+   6.562,
+   6.608,
+   6.654,
+   6.7,
+   6.746,
+   6.792,
+   6.838,
+   6.884,
+   6.93,
+   6.976,
+   7.022,
+   7.068,
+   7.114,
+   7.16,
+   7.206,
+   7.252,
+   7.298,
+   7.344,
+   7.39,
+   7.436,
+   7.482,
+   7.528,
+   7.574,
+   7.62,
+   7.666,
+   7.712,
+   7.758,
+   7.804,
+   7.85,
+   7.896,
+   7.942,
+   7.988,
+   8.034,
+   8.08,
+   8.126,
+   8.172,
+   8.218,
+   8.264,
+   8.31,
+   8.356,
+   8.402,
+   8.448,
+   8.494,
+   8.54,
+   8.586,
+   8.632,
+   8.678,
+   8.724,
+   8.77,
+   8.816,
+   8.862,
+   8.908,
+   8.954,
+   9.0,
+   9.046,
+   9.092,
+   9.138,
+   9.184,
+   9.23,
+   9.276,
+   9.322,
+   9.368,
+   9.414,
+   9.46,
+   9.506,
+   9.552,
+   9.598,
+   9.644,
+   9.69,
+   9.736,
+   9.782,
+   9.828,
+   9.874,
+   9.92,
+   9.966,
+   10.012,
+   10.058,
+   10.104,
+   10.15,
+   10.196,
+   10.242,
+   10.288,
+   10.334,
+   10.38,
+   10.426,
+   10.472,
+   10.518,
+   10.564,
+   10.61,
+   10.656,
+   10.702,
+   10.748,
+   10.794,
+   10.84,
+   10.886,
+   10.932,
+   10.978,
+   11.024,
+   11.07,
+   11.116,
+   11.162,
+   11.208,
+   11.254,
+   11.3,
+   11.346,
+   11.392,
+   11.438,
+   11.484,
+   11.53,
+   11.576,
+   11.622,
+   11.668,
+   11.714
+  ],
+  "ee_z": [
+   0.7887,
+   0.7879,
+   0.7843,
+   0.7788,
+   0.772,
+   0.7644,
+   0.7565,
+   0.7482,
+   0.7398,
+   0.7312,
+   0.7226,
+   0.7139,
+   0.7052,
+   0.6964,
+   0.6877,
+   0.6789,
+   0.6701,
+   0.6613,
+   0.6525,
+   0.6437,
+   0.6349,
+   0.6261,
+   0.6173,
+   0.6085,
+   0.5998,
+   0.591,
+   0.5822,
+   0.5735,
+   0.5648,
+   0.5561,
+   0.5474,
+   0.5387,
+   0.53,
+   0.5214,
+   0.5128,
+   0.5043,
+   0.4957,
+   0.4872,
+   0.4787,
+   0.4703,
+   0.4619,
+   0.4535,
+   0.4452,
+   0.4369,
+   0.4287,
+   0.4204,
+   0.4123,
+   0.4042,
+   0.3961,
+   0.3881,
+   0.3802,
+   0.3723,
+   0.3644,
+   0.3567,
+   0.3489,
+   0.3413,
+   0.3337,
+   0.3261,
+   0.3187,
+   0.3112,
+   0.3039,
+   0.2966,
+   0.2894,
+   0.2823,
+   0.2753,
+   0.2683,
+   0.2614,
+   0.2546,
+   0.2478,
+   0.2411,
+   0.2346,
+   0.2281,
+   0.2216,
+   0.2153,
+   0.2091,
+   0.2029,
+   0.1968,
+   0.1909,
+   0.185,
+   0.1792,
+   0.1735,
+   0.1679,
+   0.1623,
+   0.1569,
+   0.1516,
+   0.1464,
+   0.1413,
+   0.1363,
+   0.1319,
+   0.1291,
+   0.1275,
+   0.1265,
+   0.1259,
+   0.1255,
+   0.1253,
+   0.1251,
+   0.1251,
+   0.125,
+   0.125,
+   0.1249,
+   0.1241,
+   0.1228,
+   0.1211,
+   0.1193,
+   0.1172,
+   0.1151,
+   0.113,
+   0.1108,
+   0.1086,
+   0.1064,
+   0.1042,
+   0.1019,
+   0.0997,
+   0.0974,
+   0.0951,
+   0.0929,
+   0.0906,
+   0.0883,
+   0.086,
+   0.0837,
+   0.0814,
+   0.0791,
+   0.0768,
+   0.0745,
+   0.0722,
+   0.0699,
+   0.0675,
+   0.0652,
+   0.0629,
+   0.0605,
+   0.0582,
+   0.0559,
+   0.0535,
+   0.0512,
+   0.0488,
+   0.0465,
+   0.0441,
+   0.0418,
+   0.0394,
+   0.037,
+   0.0347,
+   0.0323,
+   0.0299,
+   0.028,
+   0.0268,
+   0.0261,
+   0.0256,
+   0.0254,
+   0.0252,
+   0.0251,
+   0.025,
+   0.025,
+   0.025,
+   0.025,
+   0.0249,
+   0.0249,
+   0.0249,
+   0.0249,
+   0.025,
+   0.0257,
+   0.0268,
+   0.0283,
+   0.0299,
+   0.0316,
+   0.0334,
+   0.0352,
+   0.0371,
+   0.039,
+   0.0408,
+   0.0427,
+   0.0446,
+   0.0465,
+   0.0483,
+   0.0502,
+   0.0521,
+   0.0539,
+   0.0558,
+   0.0577,
+   0.0595,
+   0.0614,
+   0.0632,
+   0.0651,
+   0.0669,
+   0.0688,
+   0.0706,
+   0.0725,
+   0.0743,
+   0.0761,
+   0.0779,
+   0.0798,
+   0.0816,
+   0.0834,
+   0.0852,
+   0.087,
+   0.0888,
+   0.0906,
+   0.0924,
+   0.0942,
+   0.0959,
+   0.0977,
+   0.0995,
+   0.1012,
+   0.1027,
+   0.1035,
+   0.1041,
+   0.1044,
+   0.1046,
+   0.1047,
+   0.1048,
+   0.1048,
+   0.1048,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049,
+   0.1049
+  ],
+  "cube_z": [
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.0199,
+   0.02,
+   0.0206,
+   0.0217,
+   0.0231,
+   0.0247,
+   0.0264,
+   0.0281,
+   0.0299,
+   0.0317,
+   0.0336,
+   0.0354,
+   0.0373,
+   0.0391,
+   0.0409,
+   0.0428,
+   0.0446,
+   0.0465,
+   0.0483,
+   0.0501,
+   0.0519,
+   0.0538,
+   0.0556,
+   0.0574,
+   0.0592,
+   0.061,
+   0.0628,
+   0.0646,
+   0.0664,
+   0.0682,
+   0.07,
+   0.0718,
+   0.0736,
+   0.0754,
+   0.0771,
+   0.0789,
+   0.0807,
+   0.0824,
+   0.0842,
+   0.0859,
+   0.0877,
+   0.0894,
+   0.0912,
+   0.0929,
+   0.0946,
+   0.0959,
+   0.0967,
+   0.0971,
+   0.0974,
+   0.0975,
+   0.0976,
+   0.0976,
+   0.0976,
+   0.0976,
+   0.0976,
+   0.0976,
+   0.0976,
+   0.0975,
+   0.0975,
+   0.0975,
+   0.0974,
+   0.0974,
+   0.0974,
+   0.0973,
+   0.0973,
+   0.0972
+  ],
+  "width": [
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.08,
+   0.0617,
+   0.04,
+   0.0385,
+   0.0396,
+   0.0399,
+   0.0398,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0398,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399,
+   0.0399
+  ],
+  "bilat": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1,
+   1
+  ]
+ },
+ "stages": [
+  {
+   "state": "RESET",
+   "ok": true,
+   "reason": "none",
+   "dur": 1.5
+  },
+  {
+   "state": "MOVE_ABOVE",
+   "ok": true,
+   "reason": "none",
+   "dur": 4.52
+  },
+  {
+   "state": "APPROACH",
+   "ok": true,
+   "reason": "none",
+   "dur": 2.52
+  },
+  {
+   "state": "CLOSE_GRIPPER",
+   "ok": true,
+   "reason": "none",
+   "dur": 0.192
+  },
+  {
+   "state": "VERIFY_CONTACT",
+   "ok": true,
+   "reason": "none",
+   "dur": 0.0
+  },
+  {
+   "state": "LIFT",
+   "ok": true,
+   "reason": "none",
+   "dur": 2.52
+  },
+  {
+   "state": "CHECK_SUCCESS",
+   "ok": true,
+   "reason": "none",
+   "dur": 0.5
+  },
+  {
+   "state": "DONE",
+   "ok": true,
+   "reason": "none",
+   "dur": 0.0
+  }
+ ],
+ "pick_success": true,
+ "hold": 0.5,
+ "ncon": 32,
+ "forces_sample": [
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.063
+  },
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.062
+  },
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.062
+  },
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.063
+  },
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.063
+  },
+  {
+   "b1": "left_finger",
+   "b2": "cube",
+   "fn": 0.062
+  }
+ ],
+ "n_force": 32
+};
+
+// ---------- 侧边栏 active 高亮 ----------
+const links = [...document.querySelectorAll('#nav a')];
+const secs = links.map(a => document.querySelector(a.getAttribute('href')));
+const obs = new IntersectionObserver(es => {
+  es.forEach(e => { if(e.isIntersecting){
+    const id = '#' + e.target.id;
+    links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === id));
+  }});
+}, {rootMargin: '-20% 0px -70% 0px'});
+secs.forEach(s => s && obs.observe(s));
+
+// ---------- SVG 工具 ----------
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e); return e;
+}
+function txt(parent, x, y, s, cls='tick', anchor='middle'){
+  const t = el('text', {x, y, class:cls, 'text-anchor':anchor}, parent);
+  t.textContent = s; return t;
+}
+
+// ---------- 图1：重力补偿对照柱状图 ----------
+(function(){
+  const card = document.getElementById('chart-gravity');
+  const W=720,H=260, m={l:70,r:30,t:24,b:46};
+  const svg = el('svg',{viewBox:`0 0 ${W} ${H}`}, card);
+  const vals = [
+    {k:'开启重力补偿', v:DATA.gravity.with_comp, c:'#0f9d58'},
+    {k:'关闭重力补偿', v:DATA.gravity.without_comp, c:'#d93025'}
+  ];
+  const max = 10;
+  const y0 = H-m.b, yTop = m.t, pw = 150, gap = 130;
+  // y grid
+  for(let i=0;i<=5;i++){
+    const v = max*i/5, y = y0-(y0-yTop)*i/5;
+    el('line',{x1:m.l,y1:y,x2:W-m.r,y2:y,class:'gridline'},svg);
+    txt(svg,m.l-10,y+4,v.toFixed(1),'tick','end');
+  }
+  el('line',{x1:m.l,y1:y0,x2:W-m.r,y2:y0,class:'axis'},svg);
+  txt(svg,24,(H)/2,'末端漂移 (mm)','axislabel','middle').setAttribute('transform',`rotate(-90 24 ${H/2})`);
+  vals.forEach((d,i)=>{
+    const x = m.l + 90 + i*(pw+gap);
+    const h = (y0-yTop)*d.v/max;
+    el('rect',{x,y:y0-h,width:pw,height:Math.max(h,2),rx:8,fill:d.c,opacity:.9},svg);
+    txt(svg,x+pw/2,y0-h-9,d.v.toFixed(2)+' mm','tick');
+    txt(svg,x+pw/2,y0+24,d.k,'axislabel');
+  });
+})();
+
+// ---------- 图2：IK 收敛曲线（对数）----------
+(function(){
+  const card = document.getElementById('chart-ik');
+  const W=720,H=300, m={l:78,r:24,t:24,b:48};
+  const svg = el('svg',{viewBox:`0 0 ${W} ${H}`}, card);
+  const curve = DATA.ik_curve;
+  const n = curve.length;
+  const logs = curve.map(p=>[Math.log10(Math.max(p[0],1e-7)), Math.log10(Math.max(p[1],1e-7))]);
+  const ymin=-7, ymax=1;
+  const X = i => m.l + (W-m.l-m.r)*i/(n-1);
+  const Y = v => m.t + (H-m.t-m.b)*(ymax-v)/(ymax-ymin);
+  for(let e=ymin;e<=ymax;e++){
+    const y=Y(e);
+    el('line',{x1:m.l,y1:y,x2:W-m.r,y2:y,class:'gridline'},svg);
+    txt(svg,m.l-10,y+4,'10^'+e,'tick','end');
+  }
+  el('line',{x1:m.l,y1:H-m.b,x2:W-m.r,y2:H-m.b,class:'axis'},svg);
+  // 容差线 1e-4
+  const yTol = Y(Math.log10(1e-4));
+  el('line',{x1:m.l,y1:yTol,x2:W-m.r,y2:yTol,stroke:'#0f9d58','stroke-dasharray':'6 5','stroke-width':1.5},svg);
+  txt(svg,W-m.r-4,yTol-6,'位置容差 1e-4 m','axislabel','end');
+  function draw(idx, color){
+    const pts = logs.map((p,i)=>`${X(i)},${Y(p[idx])}`).join(' ');
+    el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':2.5},svg);
+    logs.forEach((p,i)=>el('circle',{cx:X(i),cy:Y(p[idx]),r:2.6,fill:color},svg));
+  }
+  draw(0,'#2563eb'); draw(1,'#ea580c');
+  txt(svg,(W)/2,H-12,'IK 迭代次数','axislabel');
+  [0,10,20,30].forEach(i=>{ if(i<n) txt(svg,X(i),H-m.b+20,String(i),'tick'); });
+  txt(svg,26,H/2,'误差（对数尺度）','axislabel').setAttribute('transform',`rotate(-90 26 ${H/2})`);
+})();
+
+// ---------- 图3：抓取全过程时序 ----------
+(function(){
+  const card = document.getElementById('chart-timeline');
+  const W=760,H=340, m={l:64,r:64,t:24,b:48};
+  const svg = el('svg',{viewBox:`0 0 ${W} ${H}`}, card);
+  const tl = DATA.timeline;
+  const t0=tl.t[0], t1=tl.t[tl.t.length-1];
+  const X = t => m.l + (W-m.l-m.r)*(t-t0)/(t1-t0);
+  const y0=H-m.b, yTop=m.t;
+  // 双侧接触底纹
+  let segStart=null;
+  tl.bilat.forEach((b,i)=>{
+    if(b===1 && segStart===null) segStart=tl.t[i];
+    if((b===0||i===tl.bilat.length-1) && segStart!==null){
+      const x1=X(segStart), x2=X(tl.t[i]);
+      el('rect',{x:x1,y:yTop,width:Math.max(x2-x1,1),height:y0-yTop,fill:'#dcfce7',opacity:.7},svg);
+      segStart=null;
+    }
+  });
+  // grid
+  for(let i=0;i<=5;i++){
+    const y=y0-(y0-yTop)*i/5;
+    el('line',{x1:m.l,y1:y,x2:W-m.r,y2:y,class:'gridline'},svg);
+    txt(svg,m.l-8,y+4,(0.16*i).toFixed(2),'tick','end');
+  }
+  el('line',{x1:m.l,y1:y0,x2:W-m.r,y2:y0,class:'axis'},svg);
+  txt(svg,22,H/2,'z 高度 (m)','axislabel').setAttribute('transform',`rotate(-90 22 ${H/2})`);
+  const Yz = z => y0-(y0-yTop)*z/0.16;
+  function line(key,color,scale=1){
+    const pts=tl[key].map((v,i)=>`${X(tl.t[i])},${Yz(v*scale)}`).join(' ');
+    el('polyline',{points:pts,fill:'none',stroke:color,'stroke-width':2.2},svg);
+  }
+  line('ee_z','#2563eb'); line('cube_z','#d93025'); line('width','#ea580c');
+  // 右轴：宽度
+  txt(svg,W-20,H/2,'夹爪宽度 (m)','axislabel').setAttribute('transform',`rotate(90 ${W-20} ${H/2})`);
+  // x 轴刻度
+  for(let t=Math.ceil(t0); t<=t1; t+=2){ txt(svg,X(t),y0+20,t.toFixed(0)+'s','tick'); }
+  txt(svg,W/2,H-6,'仿真时间 (s)','axislabel');
+  // 阶段标注
+  const marks = [
+    [DATA.stages[1].state, DATA.stages[1].dur],
+  ];
+  let acc=t0+DATA.stages[0].dur;
+  DATA.stages.slice(1,7).forEach(s=>{
+    const cx=X(acc+s.dur/2);
+    if(s.dur>0.4) txt(svg,cx,yTop+14,s.state.replace('_',' '),'axislabel');
+    acc+=s.dur;
+  });
+})();
+</script>
+</body>
+</html>
